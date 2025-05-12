@@ -22,4 +22,7 @@ yarn-error.log
 
 # Build output
 dist/
-build/ 
+build/
+
+# Exclude unnecessary files
+*.db 
