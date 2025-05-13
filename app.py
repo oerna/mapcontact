@@ -159,6 +159,31 @@ def change_password():
     db.session.commit()
     return jsonify({'message': 'Password changed successfully'})
 
+@app.route('/api/contacts/<int:contact_id>', methods=['PATCH'])
+@login_required
+def update_contact(contact_id):
+    contact = Contact.query.filter_by(id=contact_id, user_id=current_user.id).first()
+    if not contact:
+        return jsonify({'error': 'Contact not found'}), 404
+        
+    data = request.json
+    
+    # Update the contact fields
+    contact.name = data.get('name', contact.name)
+    contact.company = data.get('company', contact.company)
+    contact.email = data.get('email', contact.email)
+    contact.telephone = data.get('telephone', contact.telephone)
+    contact.address = data.get('address', contact.address)
+    contact.latitude = data.get('latitude', contact.latitude)
+    contact.longitude = data.get('longitude', contact.longitude)
+    
+    try:
+        db.session.commit()
+        return jsonify(contact.to_dict())
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'error': str(e)}), 500
+
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 8000))
     app.run(host='0.0.0.0', port=port, debug=True) 
