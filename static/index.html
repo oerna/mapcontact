@@ -14,8 +14,12 @@
         <button id="changePasswordBtn" onclick="window.location.href='/change-password.html'">Change Password</button>
     </div>
     
-    <div class="form-overlay">
-        <h3>Add Contact</h3>
+    <button id="addContactBtn" class="add-contact-btn" aria-label="Add Contact">+</button>
+    <div class="form-overlay" id="formOverlay">
+        <div class="form-header">
+            <h3>Add Contact</h3>
+            <button type="button" class="close-btn" aria-label="Close form">&times;</button>
+        </div>
         <form id="contactForm">
             <div class="form-group">
                 <label for="name">Name*</label>
@@ -45,6 +49,66 @@
     <div id="map"></div>
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script>
+        // Form toggle functionality
+        const addContactBtn = document.getElementById('addContactBtn');
+        const formOverlay = document.getElementById('formOverlay');
+        const closeBtn = document.querySelector('.close-btn');
+
+        addContactBtn.addEventListener('click', () => {
+            formOverlay.classList.add('active');
+            addContactBtn.style.display = 'none';
+        });
+
+        closeBtn.addEventListener('click', () => {
+            formOverlay.classList.remove('active');
+            addContactBtn.style.display = 'flex';
+        });
+
+        // When form is submitted successfully, close the form
+        document.getElementById('contactForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            document.getElementById('loading').style.display = 'block';
+            
+            const formData = {
+                name: document.getElementById('name').value,
+                company: document.getElementById('company').value,
+                email: document.getElementById('email').value,
+                telephone: document.getElementById('telephone').value,
+                address: document.getElementById('address').value
+            };
+
+            try {
+                const response = await fetch('/api/contacts', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(formData)
+                });
+
+                if (!response.ok) {
+                    if (response.status === 401) {
+                        window.location.href = '/login.html';
+                        return;
+                    }
+                    throw new Error('Failed to add contact');
+                }
+
+                const contact = await response.json();
+                addMarkerForContact(contact);
+                document.getElementById('contactForm').reset();
+                
+                // Close the form after successful submission
+                formOverlay.classList.remove('active');
+                addContactBtn.style.display = 'flex';
+            } catch (error) {
+                console.error('Error adding contact:', error);
+                alert(error.message || 'Failed to add contact. Please try again.');
+            } finally {
+                document.getElementById('loading').style.display = 'none';
+            }
+        });
+
         // Check authentication status
         async function checkAuth() {
             try {
@@ -133,47 +197,6 @@
                 longitude: parseFloat(data[0].lon)
             };
         }
-
-        // Handle form submission
-        document.getElementById('contactForm').addEventListener('submit', async (e) => {
-            e.preventDefault();
-            document.getElementById('loading').style.display = 'block';
-            
-            const formData = {
-                name: document.getElementById('name').value,
-                company: document.getElementById('company').value,
-                email: document.getElementById('email').value,
-                telephone: document.getElementById('telephone').value,
-                address: document.getElementById('address').value
-            };
-
-            try {
-                const response = await fetch('/api/contacts', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify(formData)
-                });
-
-                if (!response.ok) {
-                    if (response.status === 401) {
-                        window.location.href = '/login.html';
-                        return;
-                    }
-                    throw new Error('Failed to add contact');
-                }
-
-                const contact = await response.json();
-                addMarkerForContact(contact);
-                document.getElementById('contactForm').reset();
-            } catch (error) {
-                console.error('Error adding contact:', error);
-                alert(error.message || 'Failed to add contact. Please try again.');
-            } finally {
-                document.getElementById('loading').style.display = 'none';
-            }
-        });
 
         // Load contacts when the page loads
         loadContacts();
