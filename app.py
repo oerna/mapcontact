@@ -1,9 +1,11 @@
-from flask import Flask, request, jsonify, send_from_directory
+from flask import Flask, request, jsonify, send_from_directory, redirect, url_for
 from flask_sqlalchemy import SQLAlchemy
 from flask_cors import CORS
 from datetime import datetime
 from geopy.geocoders import Nominatim
 from geopy.exc import GeocoderTimedOut
+from flask_login import LoginManager, UserMixin, login_user, login_required, logout_user, current_user
+from werkzeug.security import generate_password_hash, check_password_hash
 import os
 
 # Ensure instance directory exists with proper permissions
@@ -12,6 +14,7 @@ if not os.path.exists(instance_path):
     os.makedirs(instance_path, mode=0o755)
 
 app = Flask(__name__, static_folder='static', static_url_path='')
+app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'your-secret-key-here')  # Change this in production
 CORS(app)
 
 # Configure database with absolute path
@@ -20,8 +23,24 @@ app.config['SQLALCHEMY_DATABASE_URI'] = f'sqlite:///{db_path}'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db = SQLAlchemy(app)
 
+# Initialize Flask-Login
+login_manager = LoginManager()
+login_manager.init_app(app)
+login_manager.login_view = 'login'
+
 # Initialize geocoder
 geocoder = Nominatim(user_agent="mapcontacts")
+
+class User(UserMixin, db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    username = db.Column(db.String(80), unique=True, nullable=False)
+    password_hash = db.Column(db.String(120), nullable=False)
+
+    def set_password(self, password):
+        self.password_hash = generate_password_hash(password, method='pbkdf2:sha256')
+
+    def check_password(self, password):
+        return check_password_hash(self.password_hash, password)
 
 class Contact(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -33,6 +52,7 @@ class Contact(db.Model):
     latitude = db.Column(db.Float, nullable=False)
     longitude = db.Column(db.Float, nullable=False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
 
     def to_dict(self):
         return {
@@ -47,20 +67,47 @@ class Contact(db.Model):
             'created_at': self.created_at.isoformat() if self.created_at else None
         }
 
+@login_manager.user_loader
+def load_user(user_id):
+    return User.query.get(int(user_id))
+
 # Create the database tables
 with app.app_context():
     db.create_all()
+    # Create default admin user if it doesn't exist
+    if not User.query.filter_by(username='admin').first():
+        admin = User(username='admin')
+        admin.set_password('change-this-password')  # Change this password immediately after first login
+        db.session.add(admin)
+        db.session.commit()
+
+@app.route('/login', methods=['POST'])
+def login():
+    data = request.json
+    user = User.query.filter_by(username=data.get('username')).first()
+    if user and user.check_password(data.get('password')):
+        login_user(user)
+        return jsonify({'message': 'Logged in successfully'})
+    return jsonify({'error': 'Invalid username or password'}), 401
+
+@app.route('/logout')
+@login_required
+def logout():
+    logout_user()
+    return jsonify({'message': 'Logged out successfully'})
 
 @app.route('/')
 def index():
     return app.send_static_file('index.html')
 
 @app.route('/api/contacts', methods=['GET'])
+@login_required
 def get_contacts():
-    contacts = Contact.query.all()
+    contacts = Contact.query.filter_by(user_id=current_user.id).all()
     return jsonify([contact.to_dict() for contact in contacts])
 
 @app.route('/api/contacts', methods=['POST'])
+@login_required
 def add_contact():
     data = request.json
     
@@ -77,7 +124,8 @@ def add_contact():
             telephone=data.get('telephone', ''),
             address=data['address'],
             latitude=location.latitude,
-            longitude=location.longitude
+            longitude=location.longitude,
+            user_id=current_user.id
         )
         db.session.add(new_contact)
         db.session.commit()
@@ -87,6 +135,12 @@ def add_contact():
         return jsonify({'error': 'Geocoding service timed out'}), 500
     except Exception as e:
         return jsonify({'error': str(e)}), 500
+
+@app.route('/api/check-auth')
+def check_auth():
+    if current_user.is_authenticated:
+        return jsonify({'authenticated': True})
+    return jsonify({'authenticated': False}), 401
 
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 8000))
