@@ -133,12 +133,18 @@
         `;
         document.head.appendChild(style);
 
-        // Function to load contacts from localStorage
-        function loadContacts() {
-            const contacts = JSON.parse(localStorage.getItem('contacts') || '[]');
-            contacts.forEach(contact => {
-                addMarkerForContact(contact);
-            });
+        // Function to load contacts from the API
+        async function loadContacts() {
+            try {
+                const response = await fetch('/api/contacts');
+                const contacts = await response.json();
+                contacts.forEach(contact => {
+                    addMarkerForContact(contact);
+                });
+            } catch (error) {
+                console.error('Error loading contacts:', error);
+                alert('Failed to load contacts. Please try again later.');
+            }
         }
 
         // Function to add a marker for a contact
@@ -190,13 +196,23 @@
                     longitude
                 };
 
-                // Save to localStorage
-                const contacts = JSON.parse(localStorage.getItem('contacts') || '[]');
-                contacts.push(contact);
-                localStorage.setItem('contacts', JSON.stringify(contacts));
+                // Save to API
+                const response = await fetch('/api/contacts', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(contact)
+                });
 
+                if (!response.ok) {
+                    throw new Error('Failed to save contact');
+                }
+
+                const savedContact = await response.json();
+                
                 // Add marker
-                addMarkerForContact(contact);
+                addMarkerForContact(savedContact);
 
                 // Clear form
                 e.target.reset();
