@@ -142,6 +142,23 @@ def check_auth():
         return jsonify({'authenticated': True})
     return jsonify({'authenticated': False}), 401
 
+@app.route('/api/change-password', methods=['POST'])
+@login_required
+def change_password():
+    data = request.json
+    current_password = data.get('currentPassword')
+    new_password = data.get('newPassword')
+    
+    if not current_password or not new_password:
+        return jsonify({'error': 'Both current and new passwords are required'}), 400
+        
+    if not current_user.check_password(current_password):
+        return jsonify({'error': 'Current password is incorrect'}), 401
+        
+    current_user.set_password(new_password)
+    db.session.commit()
+    return jsonify({'message': 'Password changed successfully'})
+
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 8000))
     app.run(host='0.0.0.0', port=port, debug=True) 

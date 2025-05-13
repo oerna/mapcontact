@@ -86,10 +86,22 @@
         #logoutBtn:hover {
             background: #c82333;
         }
+        #changePasswordBtn {
+            position: fixed;
+            top: 20px;
+            left: 180px;
+            background: #0d6efd;
+            max-width: 150px;
+            z-index: 1000;
+        }
+        #changePasswordBtn:hover {
+            background: #0b5ed7;
+        }
     </style>
 </head>
 <body>
     <button id="logoutBtn">Logout</button>
+    <button id="changePasswordBtn" onclick="window.location.href='/change-password.html'">Change Password</button>
     <div class="form-overlay">
         <h3>Add Contact</h3>
         <form id="contactForm">
