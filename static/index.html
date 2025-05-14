@@ -22,6 +22,9 @@
         </div>
         <div class="settings-content">
             <button id="changePasswordBtn" class="settings-btn-item" onclick="window.location.href='/change-password.html'">Change Password</button>
+            <button id="exportContactsBtn" class="settings-btn-item">Export Contacts</button>
+            <button id="importContactsBtn" class="settings-btn-item">Import Contacts</button>
+            <input type="file" id="fileInput" accept=".csv" style="display: none">
             <button id="logoutBtn" class="settings-btn-item danger">Logout</button>
         </div>
     </div>
@@ -386,6 +389,65 @@
 
         // Load contacts when the page loads
         loadContacts();
+
+        // Add event listeners for import/export
+        document.getElementById('exportContactsBtn').addEventListener('click', async () => {
+            try {
+                const response = await fetch('/api/contacts/export');
+                if (!response.ok) {
+                    throw new Error('Export failed');
+                }
+                const blob = await response.blob();
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+                a.download = `contacts_export_${timestamp}.csv`;
+                document.body.appendChild(a);
+                a.click();
+                window.URL.revokeObjectURL(url);
+                document.body.removeChild(a);
+            } catch (error) {
+                console.error('Export failed:', error);
+                alert('Failed to export contacts. Please try again.');
+            }
+        });
+
+        document.getElementById('importContactsBtn').addEventListener('click', () => {
+            document.getElementById('fileInput').click();
+        });
+
+        document.getElementById('fileInput').addEventListener('change', async (event) => {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const formData = new FormData();
+            formData.append('file', file);
+
+            try {
+                document.getElementById('loading').style.display = 'block';
+                const response = await fetch('/api/contacts/import', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                if (!response.ok) {
+                    throw new Error('Import failed');
+                }
+
+                const result = await response.json();
+                alert(`Import completed successfully!\nImported: ${result.imported} contacts\nSkipped duplicates: ${result.skipped} contacts`);
+                
+                // Refresh the page to show new contacts
+                window.location.reload();
+            } catch (error) {
+                console.error('Import failed:', error);
+                alert('Failed to import contacts. Please try again.');
+            } finally {
+                document.getElementById('loading').style.display = 'none';
+                event.target.value = ''; // Reset file input
+            }
+        });
     </script>
 </body>
 </html> 

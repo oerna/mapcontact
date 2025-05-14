@@ -1,4 +1,4 @@
-from flask import Flask, request, jsonify, send_from_directory, redirect, url_for
+from flask import Flask, request, jsonify, send_from_directory, redirect, url_for, send_file
 from flask_sqlalchemy import SQLAlchemy
 from flask_cors import CORS
 from datetime import datetime
@@ -7,6 +7,9 @@ from geopy.exc import GeocoderTimedOut
 from flask_login import LoginManager, UserMixin, login_user, login_required, logout_user, current_user
 from werkzeug.security import generate_password_hash, check_password_hash
 import os
+import csv
+import io
+from werkzeug.utils import secure_filename
 
 # Ensure instance directory exists with proper permissions
 instance_path = os.path.abspath(os.path.join(os.path.dirname(__file__), 'instance'))
@@ -17,9 +20,20 @@ app = Flask(__name__, static_folder='static', static_url_path='')
 app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'your-secret-key-here')  # Change this in production
 CORS(app)
 
-# Configure database with absolute path
-db_path = os.path.join(instance_path, 'contacts.db')
-app.config['SQLALCHEMY_DATABASE_URI'] = f'sqlite:///{db_path}'
+# Database configuration
+if os.environ.get('DATABASE_URL'):
+    # Production database (PostgreSQL on Heroku)
+    # Heroku provides DATABASE_URL in the format: postgres://user:password@host:port/dbname
+    # SQLAlchemy requires it in the format: postgresql://user:password@host:port/dbname
+    database_url = os.environ.get('DATABASE_URL')
+    if database_url.startswith('postgres://'):
+        database_url = database_url.replace('postgres://', 'postgresql://', 1)
+    app.config['SQLALCHEMY_DATABASE_URI'] = database_url
+else:
+    # Development database (SQLite)
+    db_path = os.path.join(instance_path, 'contacts.db')
+    app.config['SQLALCHEMY_DATABASE_URI'] = f'sqlite:///{db_path}'
+
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db = SQLAlchemy(app)
 
@@ -180,6 +194,126 @@ def update_contact(contact_id):
     try:
         db.session.commit()
         return jsonify(contact.to_dict())
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/contacts/export')
+@login_required
+def export_contacts():
+    # Get all contacts for the current user
+    contacts = Contact.query.filter_by(user_id=current_user.id).all()
+    
+    # Create a StringIO object to write CSV data
+    si = io.StringIO()
+    writer = csv.DictWriter(si, fieldnames=['name', 'company', 'email', 'telephone', 'address', 'latitude', 'longitude', 'user_id'])
+    
+    writer.writeheader()
+    for contact in contacts:
+        writer.writerow({
+            'name': contact.name,
+            'company': contact.company,
+            'email': contact.email,
+            'telephone': contact.telephone,
+            'address': contact.address,
+            'latitude': contact.latitude,
+            'longitude': contact.longitude,
+            'user_id': contact.user_id
+        })
+    
+    output = si.getvalue()
+    si.close()
+    
+    # Create a BytesIO object for the response
+    bio = io.BytesIO()
+    bio.write(output.encode('utf-8'))
+    bio.seek(0)
+    
+    timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+    return send_file(
+        bio,
+        mimetype='text/csv',
+        as_attachment=True,
+        download_name=f'contacts_export_{timestamp}.csv'
+    )
+
+@app.route('/api/contacts/import', methods=['POST'])
+@login_required
+def import_contacts():
+    if 'file' not in request.files:
+        return jsonify({'error': 'No file provided'}), 400
+        
+    file = request.files['file']
+    if file.filename == '':
+        return jsonify({'error': 'No file selected'}), 400
+        
+    if not file.filename.endswith('.csv'):
+        return jsonify({'error': 'File must be a CSV'}), 400
+
+    imported_count = 0
+    skipped_count = 0
+    
+    try:
+        # Read the CSV file
+        stream = io.StringIO(file.stream.read().decode("UTF8"), newline=None)
+        reader = csv.DictReader(stream)
+        
+        for row in reader:
+            # Check if contact already exists
+            existing_contact = Contact.query.filter_by(
+                name=row['name'],
+                address=row['address'],
+                user_id=current_user.id
+            ).first()
+            
+            if existing_contact:
+                skipped_count += 1
+                continue
+                
+            try:
+                # Create new contact
+                new_contact = Contact(
+                    name=row['name'],
+                    company=row.get('company', ''),
+                    email=row.get('email', ''),
+                    telephone=row.get('telephone', ''),
+                    address=row['address'],
+                    latitude=float(row['latitude']) if row['latitude'] else None,
+                    longitude=float(row['longitude']) if row['longitude'] else None,
+                    user_id=current_user.id  # Always use current user's ID
+                )
+                
+                # If coordinates are missing, geocode the address
+                if not new_contact.latitude or not new_contact.longitude:
+                    try:
+                        location = geocoder.geocode(row['address'])
+                        if location:
+                            new_contact.latitude = location.latitude
+                            new_contact.longitude = location.longitude
+                        else:
+                            continue
+                    except GeocoderTimedOut:
+                        continue
+                
+                db.session.add(new_contact)
+                imported_count += 1
+                
+                # Commit every 10 records
+                if imported_count % 10 == 0:
+                    db.session.commit()
+                    
+            except Exception as e:
+                continue
+                
+        # Final commit
+        db.session.commit()
+        
+        return jsonify({
+            'message': 'Import completed successfully',
+            'imported': imported_count,
+            'skipped': skipped_count
+        })
+        
     except Exception as e:
         db.session.rollback()
         return jsonify({'error': str(e)}), 500
