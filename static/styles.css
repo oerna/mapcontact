@@ -28,27 +28,22 @@ body, html {
 }
 
 .form-overlay {
+    display: none;
     position: fixed;
-    top: 20px;
-    right: 20px;
-    background: var(--background-color);
-    padding: 24px;
-    border-radius: 12px;
-    box-shadow: var(--shadow-lg);
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: white;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
     z-index: 1000;
-    max-width: 320px;
-    backdrop-filter: blur(10px);
-    border: 1px solid var(--border-color);
-    transform: translateX(100%);
-    transition: transform 0.3s ease-in-out;
-    opacity: 0;
-    visibility: hidden;
+    max-width: 500px;
+    width: 90%;
 }
 
 .form-overlay.active {
-    transform: translateX(0);
-    opacity: 1;
-    visibility: visible;
+    display: block;
 }
 
 .form-header {
@@ -121,7 +116,7 @@ body, html {
     color: var(--text-color);
 }
 
-.form-group input {
+.form-group input, .form-group textarea {
     width: 100%;
     padding: 10px 12px;
     border: 1px solid var(--border-color);
@@ -132,7 +127,12 @@ body, html {
     box-sizing: border-box;
 }
 
-.form-group input:focus {
+.form-group textarea {
+    min-height: 100px;
+    resize: vertical;
+}
+
+.form-group input:focus, .form-group textarea:focus {
     outline: none;
     border-color: var(--accent-color);
     box-shadow: 0 0 0 3px rgba(74, 144, 226, 0.1);
@@ -274,14 +274,11 @@ button:hover {
 }
 
 .contact-popup {
-    font-family: 'Inter', sans-serif;
-    font-size: 0.875rem;
-    line-height: 1.5;
+    min-width: 200px;
 }
 
 .contact-popup p {
-    margin: 4px 0;
-    color: var(--text-color);
+    margin: 5px 0;
 }
 
 .leaflet-popup-content-wrapper {
@@ -319,4 +316,47 @@ button:hover {
 #changePasswordBtn {
     background: transparent;
     max-width: none;
+}
+
+.edit-contact-btn {
+    background-color: #4CAF50;
+    color: white;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 4px;
+    cursor: pointer;
+    margin-top: 10px;
+    font-size: 14px;
+    transition: background-color 0.2s;
+}
+
+.edit-contact-btn:hover {
+    background-color: #45a049;
+}
+
+.delete-contact-btn {
+    background-color: var(--danger-color);
+    color: white;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 4px;
+    cursor: pointer;
+    margin-top: 10px;
+    font-size: 14px;
+    transition: background-color 0.2s;
+    width: 100%;
+}
+
+.delete-contact-btn:hover {
+    background-color: #d44444;
+}
+
+.button-group {
+    display: flex;
+    gap: 10px;
+    margin-top: 10px;
+}
+
+.button-group button {
+    flex: 1;
 } 

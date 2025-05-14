@@ -324,6 +324,21 @@ def import_contacts():
         db.session.rollback()
         return jsonify({'error': str(e)}), 500
 
+@app.route('/api/contacts/<int:contact_id>', methods=['DELETE'])
+@login_required
+def delete_contact(contact_id):
+    contact = Contact.query.filter_by(id=contact_id, user_id=current_user.id).first()
+    if not contact:
+        return jsonify({'error': 'Contact not found'}), 404
+    
+    try:
+        db.session.delete(contact)
+        db.session.commit()
+        return jsonify({'message': 'Contact deleted successfully'})
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'error': str(e)}), 500
+
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 8000))
     app.run(host='0.0.0.0', port=port, debug=True) 
