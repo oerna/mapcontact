@@ -65,6 +65,7 @@ class Contact(db.Model):
     address = db.Column(db.String(200), nullable=False)
     latitude = db.Column(db.Float, nullable=False)
     longitude = db.Column(db.Float, nullable=False)
+    notes = db.Column(db.Text)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
 
@@ -78,6 +79,7 @@ class Contact(db.Model):
             'address': self.address,
             'latitude': self.latitude,
             'longitude': self.longitude,
+            'notes': self.notes,
             'created_at': self.created_at.isoformat() if self.created_at else None
         }
 
@@ -139,6 +141,7 @@ def add_contact():
             address=data['address'],
             latitude=location.latitude,
             longitude=location.longitude,
+            notes=data.get('notes', ''),
             user_id=current_user.id
         )
         db.session.add(new_contact)
@@ -190,6 +193,7 @@ def update_contact(contact_id):
     contact.address = data.get('address', contact.address)
     contact.latitude = data.get('latitude', contact.latitude)
     contact.longitude = data.get('longitude', contact.longitude)
+    contact.notes = data.get('notes', contact.notes)
     
     try:
         db.session.commit()
@@ -206,7 +210,7 @@ def export_contacts():
     
     # Create a StringIO object to write CSV data
     si = io.StringIO()
-    writer = csv.DictWriter(si, fieldnames=['name', 'company', 'email', 'telephone', 'address', 'latitude', 'longitude', 'user_id'])
+    writer = csv.DictWriter(si, fieldnames=['name', 'company', 'email', 'telephone', 'address', 'latitude', 'longitude', 'notes', 'user_id'])
     
     writer.writeheader()
     for contact in contacts:
@@ -218,6 +222,7 @@ def export_contacts():
             'address': contact.address,
             'latitude': contact.latitude,
             'longitude': contact.longitude,
+            'notes': contact.notes,
             'user_id': contact.user_id
         })
     
@@ -280,6 +285,7 @@ def import_contacts():
                     address=row['address'],
                     latitude=float(row['latitude']) if row['latitude'] else None,
                     longitude=float(row['longitude']) if row['longitude'] else None,
+                    notes=row.get('notes', ''),
                     user_id=current_user.id  # Always use current user's ID
                 )
                 
