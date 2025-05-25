@@ -818,26 +818,29 @@ button:hover {
     }
 
     .settings-btn {
-        right: 72px;
+        right: 76px;
     }
 
     .filter-btn {
-        right: 136px;
+        right: 140px;
+    }
+
+    .add-contact-btn {
+        right: 16px;
     }
 
     .form-overlay {
-        width: 100%;
+        width: 92%;
         max-width: none;
-        height: 90vh;
-        top: auto;
-        bottom: 0;
-        transform: translateY(100%);
-        border-radius: 20px 20px 0 0;
+        margin: 0;
         padding: 20px;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        border-radius: 16px;
     }
 
     .form-overlay.active {
-        transform: translateY(0);
+        display: block;
     }
 
     .form-header {
@@ -849,22 +852,23 @@ button:hover {
     }
 
     .form-group input, 
-    .form-group textarea,
-    .form-group select {
-        font-size: 16px; /* Prevent zoom on iOS */
+    .form-group textarea {
+        font-size: 16px;
         padding: 12px;
     }
 
     .settings-menu, 
     .filter-menu {
-        width: 100%;
-        max-width: none;
-        height: 90vh;
-        top: auto;
-        bottom: 0;
-        transform: translateY(100%);
-        border-radius: 20px 20px 0 0;
-        padding: 20px;
+        position: fixed;
+        top: 76px;
+        right: 16px;
+        width: calc(100% - 32px);
+        max-width: 320px;
+        margin: 0;
+        padding: 16px;
+        border-radius: 16px;
+        transform: translateY(-10px);
+        left: auto;
     }
 
     .settings-menu.active,
@@ -874,14 +878,13 @@ button:hover {
 
     .settings-btn-item,
     .filter-bubble {
-        padding: 16px;
-        font-size: 16px;
+        padding: 12px;
         margin-bottom: 8px;
     }
 
     .filter-bubbles {
         display: grid;
-        grid-template-columns: repeat(2, 1fr);
+        grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
         gap: 8px;
         margin-bottom: 16px;
     }
@@ -900,26 +903,30 @@ button:hover {
         width: 100%;
     }
 
-    /* Improve touch targets */
     button {
-        min-height: 44px;
+        padding: 14px;
+        font-size: 16px;
     }
 
     .close-btn {
-        width: 44px;
-        height: 44px;
+        width: 40px;
+        height: 40px;
+        font-size: 24px;
         display: flex;
         align-items: center;
         justify-content: center;
+        margin: -8px -8px 0 0;
     }
 
-    /* Add safe area insets for modern mobile browsers */
-    @supports (padding: max(0px)) {
-        .form-overlay,
-        .settings-menu,
-        .filter-menu {
-            padding-bottom: max(20px, env(safe-area-inset-bottom));
-        }
+    .leaflet-control-zoom {
+        margin: 16px !important;
+    }
+
+    .leaflet-control-zoom a {
+        width: 40px !important;
+        height: 40px !important;
+        line-height: 40px !important;
+        font-size: 20px !important;
     }
 }
 
