@@ -1,0 +1,24 @@
+# Enable Passenger
+PassengerEnabled On
+PassengerPython /home/ddiemeo9zafc/virtualenv/mapcontacts/3.9/bin/python3
+
+# Set the application root
+PassengerAppRoot /home/ddiemeo9zafc/mapcontacts
+
+# Set the WSGI application file
+PassengerStartupFile passenger_wsgi.py
+
+# Enable URL rewriting
+RewriteEngine On
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteRule ^(.*)$ /passenger_wsgi.py/$1 [QSA,L]
+
+# Set Python path
+SetEnv PYTHONPATH /home/ddiemeo9zafc/virtualenv/mapcontacts/3.9/lib/python3.9/site-packages
+
+# Handle static files
+<Directory /home/ddiemeo9zafc/mapcontacts/static>
+    Options -Indexes
+    Allow from all
+</Directory> 

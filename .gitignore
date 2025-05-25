@@ -24,5 +24,12 @@ yarn-error.log
 dist/
 build/
 
+# Database files
+instance/*.db
+
+# Keep exports directory but ignore temporary files
+!exports/
+exports/*.tmp
+
 # Exclude unnecessary files
 *.db 
