@@ -34,7 +34,7 @@ CORS(app,
      supports_credentials=True,
      resources={
          r"/*": {
-             "origins": ["https://contactbook.oerna.de", "http://localhost:8000", "http://127.0.0.1:8000"],
+             "origins": ["https://contactbook.oerna.de"],
              "methods": ["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],
              "allow_headers": ["Content-Type", "Authorization"],
              "expose_headers": ["Content-Type", "Authorization"],
