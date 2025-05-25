@@ -18,11 +18,11 @@ if not os.path.exists(instance_path):
 
 app = Flask(__name__, static_folder='static', static_url_path='')
 app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'mapcontacts-secure-key-2024')
-app.config['SESSION_COOKIE_SECURE'] = True
+app.config['SESSION_COOKIE_SECURE'] = os.environ.get('FLASK_ENV') == 'production'
 app.config['SESSION_COOKIE_HTTPONLY'] = True
 app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
 app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(seconds=int(os.environ.get('PERMANENT_SESSION_LIFETIME', '86400')))
-app.config['SESSION_COOKIE_DOMAIN'] = None  # Remove domain restriction to allow local development
+app.config['SESSION_COOKIE_DOMAIN'] = 'contactbook.oerna.de' if os.environ.get('FLASK_ENV') == 'production' else None
 
 # Configure CORS
 CORS(app, 
