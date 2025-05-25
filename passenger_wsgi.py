@@ -17,6 +17,7 @@ os.environ['SESSION_COOKIE_SECURE'] = 'True'
 os.environ['SESSION_COOKIE_HTTPONLY'] = 'True'
 os.environ['SESSION_COOKIE_SAMESITE'] = 'Lax'
 os.environ['PERMANENT_SESSION_LIFETIME'] = '86400'  # 24 hours in seconds
+os.environ['SQLALCHEMY_TRACK_MODIFICATIONS'] = 'False'
 
 # Import the Flask application
 from app import app as application 

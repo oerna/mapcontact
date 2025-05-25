@@ -122,19 +122,27 @@ def login():
     if not data or 'username' not in data or 'password' not in data:
         return jsonify({'error': 'Missing username or password'}), 400
         
-    user = User.query.filter_by(username=data['username']).first()
-    if user and user.check_password(data['password']):
-        login_user(user, remember=True)
-        session.permanent = True
-        return jsonify({'message': 'Logged in successfully'})
-    return jsonify({'error': 'Invalid username or password'}), 401
+    try:
+        user = User.query.filter_by(username=data['username']).first()
+        if user and user.check_password(data['password']):
+            login_user(user, remember=True)
+            session.permanent = True
+            return jsonify({'message': 'Logged in successfully'})
+        return jsonify({'error': 'Invalid username or password'}), 401
+    except Exception as e:
+        print(f"Login error: {str(e)}")
+        return jsonify({'error': 'An error occurred during login'}), 500
 
 @app.route('/logout')
 @login_required
 def logout():
-    logout_user()
-    session.clear()  # Clear the session
-    return redirect('/login.html')
+    try:
+        logout_user()
+        session.clear()
+        return redirect('/login.html')
+    except Exception as e:
+        print(f"Logout error: {str(e)}")
+        return redirect('/login.html')
 
 @app.route('/')
 def index():
@@ -182,9 +190,13 @@ def add_contact():
 
 @app.route('/api/check-auth')
 def check_auth():
-    if current_user.is_authenticated:
-        return jsonify({'authenticated': True, 'user': current_user.username})
-    return jsonify({'authenticated': False}), 401
+    try:
+        if current_user.is_authenticated:
+            return jsonify({'authenticated': True, 'user': current_user.username})
+        return jsonify({'authenticated': False}), 401
+    except Exception as e:
+        print(f"Auth check error: {str(e)}")
+        return jsonify({'authenticated': False}), 401
 
 @app.route('/api/change-password', methods=['POST'])
 @login_required
