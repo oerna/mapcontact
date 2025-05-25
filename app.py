@@ -66,6 +66,7 @@ class Contact(db.Model):
     latitude = db.Column(db.Float, nullable=False)
     longitude = db.Column(db.Float, nullable=False)
     notes = db.Column(db.Text)
+    contact_type = db.Column(db.String(50), nullable=True)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
 
@@ -80,6 +81,7 @@ class Contact(db.Model):
             'latitude': self.latitude,
             'longitude': self.longitude,
             'notes': self.notes,
+            'contact_type': self.contact_type,
             'created_at': self.created_at.isoformat() if self.created_at else None
         }
 
@@ -142,6 +144,7 @@ def add_contact():
             latitude=location.latitude,
             longitude=location.longitude,
             notes=data.get('notes', ''),
+            contact_type=data.get('contact_type', 'Other') or 'Other',
             user_id=current_user.id
         )
         db.session.add(new_contact)
@@ -210,7 +213,7 @@ def export_contacts():
     
     # Create a StringIO object to write CSV data
     si = io.StringIO()
-    writer = csv.DictWriter(si, fieldnames=['name', 'company', 'email', 'telephone', 'address', 'latitude', 'longitude', 'notes', 'user_id'])
+    writer = csv.DictWriter(si, fieldnames=['name', 'company', 'email', 'telephone', 'address', 'latitude', 'longitude', 'notes', 'contact_type', 'user_id'])
     
     writer.writeheader()
     for contact in contacts:
@@ -223,6 +226,7 @@ def export_contacts():
             'latitude': contact.latitude,
             'longitude': contact.longitude,
             'notes': contact.notes,
+            'contact_type': contact.contact_type,
             'user_id': contact.user_id
         })
     
@@ -286,7 +290,8 @@ def import_contacts():
                     latitude=float(row['latitude']) if row['latitude'] else None,
                     longitude=float(row['longitude']) if row['longitude'] else None,
                     notes=row.get('notes', ''),
-                    user_id=current_user.id  # Always use current user's ID
+                    contact_type=row.get('contact_type', 'Other') or 'Other',
+                    user_id=current_user.id
                 )
                 
                 # If coordinates are missing, geocode the address

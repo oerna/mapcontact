@@ -21,6 +21,17 @@
             <button type="button" class="close-btn" id="closeSettingsBtn" aria-label="Close settings">&times;</button>
         </div>
         <div class="settings-content">
+            <div class="form-group">
+                <label for="contactTypeFilter">Filter by Contact Type</label>
+                <select id="contactTypeFilter" class="form-control">
+                    <option value="">All Contacts</option>
+                    <option value="Place">Place</option>
+                    <option value="Artist">Artist</option>
+                    <option value="Booker">Booker</option>
+                    <option value="Festival">Festival</option>
+                    <option value="Other">Other</option>
+                </select>
+            </div>
             <button id="changePasswordBtn" class="settings-btn-item" onclick="window.location.href='/change-password.html'">Change Password</button>
             <button id="exportContactsBtn" class="settings-btn-item">Export Contacts</button>
             <button id="importContactsBtn" class="settings-btn-item">Import Contacts</button>
@@ -55,6 +66,16 @@
             <div class="form-group">
                 <label for="address">Address*</label>
                 <input type="text" id="address" required placeholder="Enter full address">
+            </div>
+            <div class="form-group">
+                <label for="contactType">Contact Type</label>
+                <select id="contactType" class="form-control">
+                    <option value="Other" selected>Other</option>
+                    <option value="Place">Place</option>
+                    <option value="Artist">Artist</option>
+                    <option value="Booker">Booker</option>
+                    <option value="Festival">Festival</option>
+                </select>
             </div>
             <div class="form-group">
                 <label for="notes">Notes</label>
@@ -92,6 +113,16 @@
                 <input type="text" id="editAddress" required placeholder="Enter full address">
             </div>
             <div class="form-group">
+                <label for="editContactType">Contact Type</label>
+                <select id="editContactType" class="form-control">
+                    <option value="Other" selected>Other</option>
+                    <option value="Place">Place</option>
+                    <option value="Artist">Artist</option>
+                    <option value="Booker">Booker</option>
+                    <option value="Festival">Festival</option>
+                </select>
+            </div>
+            <div class="form-group">
                 <label for="editNotes">Notes</label>
                 <textarea id="editNotes" placeholder="Enter any additional notes"></textarea>
             </div>
@@ -103,54 +134,75 @@
     <div id="map"></div>
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script>
-        // Settings menu toggle functionality
-        const settingsBtn = document.getElementById('settingsBtn');
-        const settingsMenu = document.getElementById('settingsMenu');
-        const closeSettingsBtn = document.getElementById('closeSettingsBtn');
-
-        settingsBtn.addEventListener('click', (e) => {
-            e.stopPropagation();
-            settingsMenu.classList.add('active');
-            settingsBtn.style.display = 'none';
-        });
-
-        closeSettingsBtn.addEventListener('click', (e) => {
-            e.stopPropagation();
-            settingsMenu.classList.remove('active');
-            settingsBtn.style.display = 'flex';
-        });
-
-        // Form toggle functionality
-        const addContactBtn = document.getElementById('addContactBtn');
-        const formOverlay = document.getElementById('formOverlay');
-        const closeFormBtn = document.getElementById('closeFormBtn');
-
-        addContactBtn.addEventListener('click', (e) => {
-            e.stopPropagation();
-            formOverlay.classList.add('active');
-            addContactBtn.style.display = 'none';
-        });
-
-        closeFormBtn.addEventListener('click', (e) => {
-            e.stopPropagation();
-            formOverlay.classList.remove('active');
-            addContactBtn.style.display = 'flex';
-        });
-
-        // Close menus when clicking outside
-        document.addEventListener('click', (e) => {
-            // Handle settings menu
-            if (!settingsMenu.contains(e.target) && e.target !== settingsBtn) {
-                settingsMenu.classList.remove('active');
-                settingsBtn.style.display = 'flex';
-            }
+        // Bottom sheet functionality
+        function setupBottomSheet(element, openBtn, closeBtn) {
+            let startY = 0;
+            let currentY = 0;
             
-            // Handle contact form
-            if (!formOverlay.contains(e.target) && e.target !== addContactBtn) {
-                formOverlay.classList.remove('active');
-                addContactBtn.style.display = 'flex';
+            // Open bottom sheet
+            openBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                element.classList.add('active');
+                document.body.classList.add('bottom-sheet-open');
+                if (openBtn) openBtn.style.display = 'none';
+            });
+
+            // Close bottom sheet
+            function closeSheet() {
+                element.classList.remove('active');
+                document.body.classList.remove('bottom-sheet-open');
+                if (openBtn) openBtn.style.display = 'flex';
             }
-        });
+
+            closeBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                closeSheet();
+            });
+
+            // Touch events for swipe down to close
+            element.addEventListener('touchstart', (e) => {
+                startY = e.touches[0].clientY;
+                currentY = startY;
+            });
+
+            element.addEventListener('touchmove', (e) => {
+                currentY = e.touches[0].clientY;
+                const diff = currentY - startY;
+                
+                if (diff > 0) { // Only allow dragging down
+                    element.style.transform = `translateY(${diff}px)`;
+                }
+            });
+
+            element.addEventListener('touchend', () => {
+                const diff = currentY - startY;
+                if (diff > 100) { // If dragged down more than 100px, close the sheet
+                    closeSheet();
+                } else {
+                    element.style.transform = ''; // Reset position
+                }
+            });
+
+            // Close when clicking backdrop
+            element.addEventListener('click', (e) => {
+                if (e.target === element) {
+                    closeSheet();
+                }
+            });
+        }
+
+        // Initialize bottom sheets
+        setupBottomSheet(
+            document.getElementById('formOverlay'),
+            document.getElementById('addContactBtn'),
+            document.getElementById('closeFormBtn')
+        );
+
+        setupBottomSheet(
+            document.getElementById('settingsMenu'),
+            document.getElementById('settingsBtn'),
+            document.getElementById('closeSettingsBtn')
+        );
 
         // When form is submitted successfully, close the form
         document.getElementById('contactForm').addEventListener('submit', async (e) => {
@@ -163,6 +215,7 @@
                 email: document.getElementById('email').value,
                 telephone: document.getElementById('telephone').value,
                 address: document.getElementById('address').value,
+                contact_type: document.getElementById('contactType').value,
                 notes: document.getElementById('notes').value
             };
 
@@ -188,8 +241,9 @@
                 document.getElementById('contactForm').reset();
                 
                 // Close the form after successful submission
-                formOverlay.classList.remove('active');
-                addContactBtn.style.display = 'flex';
+                document.getElementById('formOverlay').classList.remove('active');
+                document.body.classList.remove('bottom-sheet-open');
+                document.getElementById('addContactBtn').style.display = 'flex';
             } catch (error) {
                 console.error('Error adding contact:', error);
                 alert(error.message || 'Failed to add contact. Please try again.');
@@ -235,7 +289,7 @@
         }).addTo(map);
 
         // Function to load contacts from the API
-        async function loadContacts() {
+        async function loadContacts(contactType = '') {
             try {
                 const response = await fetch('/api/contacts');
                 if (!response.ok) {
@@ -245,13 +299,28 @@
                     }
                     throw new Error('Failed to load contacts');
                 }
+
                 const contacts = await response.json();
-                contacts.forEach(contact => {
+                
+                // Clear existing markers
+                map.eachLayer((layer) => {
+                    if (layer instanceof L.CircleMarker) {
+                        map.removeLayer(layer);
+                    }
+                });
+
+                // Filter contacts if a type is selected
+                const filteredContacts = contactType 
+                    ? contacts.filter(contact => contact.contact_type === contactType)
+                    : contacts;
+
+                // Add markers for filtered contacts
+                filteredContacts.forEach(contact => {
                     addMarkerForContact(contact);
                 });
             } catch (error) {
                 console.error('Error loading contacts:', error);
-                alert('Failed to load contacts. Please try again later.');
+                alert('Failed to load contacts. Please try again.');
             }
         }
 
@@ -359,6 +428,7 @@
             document.getElementById('editEmail').value = contact.email || '';
             document.getElementById('editTelephone').value = contact.telephone || '';
             document.getElementById('editAddress').value = contact.address;
+            document.getElementById('editContactType').value = contact.contact_type || '';
             document.getElementById('editNotes').value = contact.notes || '';
             
             // Show the edit form
@@ -390,6 +460,7 @@
                     email: document.getElementById('editEmail').value,
                     telephone: document.getElementById('editTelephone').value,
                     address: newAddress,
+                    contact_type: document.getElementById('editContactType').value,
                     notes: document.getElementById('editNotes').value,
                     latitude: latitude,
                     longitude: longitude
@@ -508,6 +579,12 @@
                 document.getElementById('loading').style.display = 'none';
                 event.target.value = ''; // Reset file input
             }
+        });
+
+        // Add contact type filter functionality
+        document.getElementById('contactTypeFilter').addEventListener('change', async function() {
+            const selectedType = this.value;
+            await loadContacts(selectedType);
         });
     </script>
 </body>
