@@ -33,7 +33,8 @@ CORS(app,
              "methods": ["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],
              "allow_headers": ["Content-Type", "Authorization"],
              "expose_headers": ["Content-Type", "Authorization"],
-             "supports_credentials": True
+             "supports_credentials": True,
+             "max_age": 3600
          }
      })
 
@@ -42,10 +43,12 @@ if os.environ.get('DATABASE_URL'):
     # Production database (MySQL)
     database_url = os.environ.get('DATABASE_URL')
     app.config['SQLALCHEMY_DATABASE_URI'] = database_url
+    print(f"Using production database: {database_url}")
 else:
     # Development database (SQLite)
     db_path = os.path.join(instance_path, 'contacts.db')
     app.config['SQLALCHEMY_DATABASE_URI'] = f'sqlite:///{db_path}'
+    print(f"Using development database: {db_path}")
 
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db = SQLAlchemy(app)
@@ -118,17 +121,25 @@ with app.app_context():
 
 @app.route('/login', methods=['POST'])
 def login():
-    data = request.json
-    if not data or 'username' not in data or 'password' not in data:
-        return jsonify({'error': 'Missing username or password'}), 400
-        
     try:
+        data = request.json
+        if not data or 'username' not in data or 'password' not in data:
+            print("Login attempt with missing credentials")
+            return jsonify({'error': 'Missing username or password'}), 400
+            
         user = User.query.filter_by(username=data['username']).first()
-        if user and user.check_password(data['password']):
-            login_user(user, remember=True)
-            session.permanent = True
-            return jsonify({'message': 'Logged in successfully'})
-        return jsonify({'error': 'Invalid username or password'}), 401
+        if not user:
+            print(f"Login attempt with non-existent username: {data['username']}")
+            return jsonify({'error': 'Invalid username or password'}), 401
+            
+        if not user.check_password(data['password']):
+            print(f"Login attempt with incorrect password for user: {data['username']}")
+            return jsonify({'error': 'Invalid username or password'}), 401
+            
+        login_user(user, remember=True)
+        session.permanent = True
+        print(f"Successful login for user: {data['username']}")
+        return jsonify({'message': 'Logged in successfully'})
     except Exception as e:
         print(f"Login error: {str(e)}")
         return jsonify({'error': 'An error occurred during login'}), 500
