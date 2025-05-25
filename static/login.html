@@ -54,23 +54,47 @@
 
     <script>
         // Check if already logged in
-        fetch('/api/check-auth', {
-            credentials: 'include'
-        }).then(response => {
-            if (response.ok) {
-                window.location.href = '/';
+        async function checkAuth() {
+            try {
+                const response = await fetch('/api/check-auth', {
+                    method: 'GET',
+                    credentials: 'include',
+                    headers: {
+                        'Accept': 'application/json'
+                    }
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    if (data.authenticated) {
+                        window.location.href = '/';
+                    }
+                }
+            } catch (error) {
+                console.error('Auth check error:', error);
             }
-        });
-
-        // Handle logout response
-        if (window.location.search.includes('logout')) {
-            fetch('/logout', {
-                credentials: 'include'
-            }).then(() => {
-                window.location.href = '/login.html';
-            });
         }
 
+        // Handle logout
+        async function handleLogout() {
+            if (window.location.search.includes('logout')) {
+                try {
+                    await fetch('/logout', {
+                        method: 'GET',
+                        credentials: 'include'
+                    });
+                    window.location.href = '/login.html';
+                } catch (error) {
+                    console.error('Logout error:', error);
+                }
+            }
+        }
+
+        // Initialize
+        checkAuth();
+        handleLogout();
+
+        // Handle form submission
         document.getElementById('loginForm').addEventListener('submit', async (e) => {
             e.preventDefault();
             const username = document.getElementById('username').value;
@@ -88,25 +112,31 @@
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
+                        'Accept': 'application/json'
                     },
                     credentials: 'include',
-                    body: JSON.stringify({ username, password }),
+                    body: JSON.stringify({ username, password })
                 });
 
-                const data = await response.json();
+                let data;
+                try {
+                    data = await response.json();
+                } catch (e) {
+                    console.error('Failed to parse response:', e);
+                    throw new Error('Invalid server response');
+                }
 
                 if (response.ok) {
                     window.location.href = '/';
                 } else {
                     errorMessage.textContent = data.error || 'Login failed';
                     errorMessage.style.display = 'block';
-                    submitButton.disabled = false;
-                    submitButton.textContent = 'Sign in';
                 }
             } catch (error) {
                 console.error('Login error:', error);
                 errorMessage.textContent = 'An error occurred. Please try again.';
                 errorMessage.style.display = 'block';
+            } finally {
                 submitButton.disabled = false;
                 submitButton.textContent = 'Sign in';
             }
