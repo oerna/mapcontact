@@ -835,12 +835,33 @@ button:hover {
         margin: 0;
         padding: 20px;
         left: 50%;
+        top: 50%;
         transform: translate(-50%, -50%);
         border-radius: 16px;
+        max-height: 85vh;
+        overflow-y: auto;
+        -webkit-overflow-scrolling: touch;
+        padding-bottom: env(safe-area-inset-bottom, 20px);
     }
 
     .form-overlay.active {
         display: block;
+    }
+
+    .form-overlay button[type="submit"] {
+        position: sticky;
+        bottom: 0;
+        margin-top: 20px;
+        background: var(--accent-color);
+        padding: 16px;
+        font-size: 16px;
+        z-index: 1;
+        box-shadow: 0 -4px 12px rgba(0, 0, 0, 0.1);
+    }
+
+    /* Add padding to the last form group to ensure space above the sticky button */
+    .form-group:last-of-type {
+        margin-bottom: 24px;
     }
 
     .form-header {
