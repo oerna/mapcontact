@@ -39,6 +39,7 @@ os.environ['SESSION_COOKIE_HTTPONLY'] = 'True'
 os.environ['SESSION_COOKIE_SAMESITE'] = 'Lax'
 os.environ['PERMANENT_SESSION_LIFETIME'] = '86400'  # 24 hours in seconds
 os.environ['SQLALCHEMY_TRACK_MODIFICATIONS'] = 'False'
+os.environ['SESSION_COOKIE_DOMAIN'] = 'contactbook.oerna.de'
 
 # Log environment setup
 logger.info("Environment configured for production")

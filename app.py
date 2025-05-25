@@ -43,6 +43,12 @@ CORS(app,
          }
      })
 
+# Initialize Flask-Login
+login_manager = LoginManager()
+login_manager.init_app(app)
+login_manager.login_view = 'login'
+login_manager.session_protection = 'strong'
+
 # Database configuration
 try:
     if os.environ.get('DATABASE_URL'):
@@ -62,11 +68,6 @@ try:
 except Exception as e:
     logger.error(f"Database configuration error: {str(e)}")
     raise
-
-# Initialize Flask-Login
-login_manager = LoginManager()
-login_manager.init_app(app)
-login_manager.login_view = 'login'
 
 # Initialize geocoder
 geocoder = Nominatim(user_agent="mapcontacts")
@@ -170,7 +171,7 @@ def logout():
         session.clear()
         return redirect('/login.html')
     except Exception as e:
-        print(f"Logout error: {str(e)}")
+        logger.error(f"Logout error: {str(e)}")
         return redirect('/login.html')
 
 @app.route('/')
