@@ -391,35 +391,83 @@ button:hover {
     height: 24px;
 }
 
-.filter-menu {
-    position: fixed;
-    bottom: -100%;
-    left: 0;
-    right: 0;
-    background: white;
-    border-radius: 20px 20px 0 0;
-    box-shadow: 0 -2px 10px rgba(0,0,0,0.1);
-    z-index: 1001;
-    transition: bottom 0.3s ease-in-out;
-    max-height: 80vh;
-    overflow-y: auto;
-}
-
-.filter-menu.active {
-    bottom: 0;
-}
-
 .filter-header {
-    padding: 20px;
-    border-bottom: 1px solid #eee;
     display: flex;
     justify-content: space-between;
     align-items: center;
+    margin-bottom: 16px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid var(--border-color);
 }
 
 .filter-header h3 {
     margin: 0;
-    color: #333;
+    font-weight: 600;
+    font-size: 1.25rem;
+    color: var(--primary-color);
+}
+
+.filter-menu {
+    position: fixed;
+    top: 20px;
+    right: 156px;
+    background: var(--background-color);
+    padding: 24px;
+    border-radius: 12px;
+    box-shadow: var(--shadow-lg);
+    z-index: 1000;
+    backdrop-filter: blur(10px);
+    border: 1px solid var(--border-color);
+    transform: translateY(-20px) scale(0.95);
+    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.3s ease-in-out, visibility 0.3s;
+    opacity: 0;
+    visibility: hidden;
+}
+
+.filter-menu.active {
+    transform: translateY(0) scale(1);
+    opacity: 1;
+    visibility: visible;
+}
+
+.filter-bubbles {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    max-width: 300px;
+}
+
+.filter-bubble {
+    background: var(--background-color);
+    color: var(--text-color);
+    border: 1px solid var(--border-color);
+    padding: 8px 16px;
+    border-radius: 20px;
+    cursor: pointer;
+    font-size: 0.875rem;
+    font-weight: 500;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    white-space: nowrap;
+    box-shadow: var(--shadow-sm);
+}
+
+.filter-bubble:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-md);
+    border-color: var(--accent-color);
+    color: var(--accent-color);
+}
+
+.filter-bubble.active {
+    background: var(--accent-color);
+    color: white;
+    border-color: var(--accent-color);
+    box-shadow: var(--shadow-md);
+}
+
+.filter-bubble.active:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-lg);
 }
 
 .filter-content {

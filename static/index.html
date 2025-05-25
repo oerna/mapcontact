@@ -41,18 +41,13 @@
             <h3>Filter Contacts</h3>
             <button type="button" class="close-btn" id="closeFilterBtn" aria-label="Close filter">&times;</button>
         </div>
-        <div class="filter-content">
-            <div class="form-group">
-                <label for="contactTypeFilter">Filter by Contact Type</label>
-                <select id="contactTypeFilter" class="form-control">
-                    <option value="">All Contacts</option>
-                    <option value="Place">Place</option>
-                    <option value="Artist">Artist</option>
-                    <option value="Booker">Booker</option>
-                    <option value="Festival">Festival</option>
-                    <option value="Other">Other</option>
-                </select>
-            </div>
+        <div class="filter-bubbles">
+            <button class="filter-bubble" data-type="">All</button>
+            <button class="filter-bubble" data-type="Place">Place</button>
+            <button class="filter-bubble" data-type="Artist">Artist</button>
+            <button class="filter-bubble" data-type="Booker">Booker</button>
+            <button class="filter-bubble" data-type="Festival">Festival</button>
+            <button class="filter-bubble" data-type="Other">Other</button>
         </div>
     </div>
 
@@ -147,9 +142,15 @@
     </div>
 
     <div id="loading">Geocoding address...</div>
-    <div id="map"></div>
-    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <div id="map" style="position: absolute; top: 0; left: 0; right: 0; bottom: 0; z-index: 1;"></div>
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" onerror="alert('Failed to load Leaflet map library. Please check your internet connection.')"></script>
     <script>
+        // Check if Leaflet is loaded
+        if (typeof L === 'undefined') {
+            console.error('Leaflet library not loaded');
+            alert('Failed to load map library. Please check your internet connection and try refreshing the page.');
+        }
+
         // Bottom sheet functionality
         function setupBottomSheet(element, openBtn, closeBtn) {
             let startY = 0;
@@ -301,14 +302,22 @@
         });
 
         // Initialize the map
-        const map = L.map('map').setView([46.603354, 1.888334], 6);
+        let map;
+        try {
+            map = L.map('map').setView([46.603354, 1.888334], 6);
 
-        // Add OpenStreetMap tiles
-        L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
-            maxZoom: 19,
-            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>',
-            subdomains: 'abcd'
-        }).addTo(map);
+            // Add OpenStreetMap tiles
+            L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+                maxZoom: 19,
+                attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>',
+                subdomains: 'abcd'
+            }).addTo(map);
+
+            console.log('Map initialized successfully');
+        } catch (error) {
+            console.error('Error initializing map:', error);
+            alert('Failed to initialize map. Please check your internet connection and try refreshing the page.');
+        }
 
         // Function to load contacts from the API
         async function loadContacts(contactType = '') {
@@ -613,9 +622,14 @@
         });
 
         // Add contact type filter functionality
-        document.getElementById('contactTypeFilter').addEventListener('change', async function() {
-            const selectedType = this.value;
-            await loadContacts(selectedType);
+        document.querySelectorAll('.filter-bubble').forEach(button => {
+            button.addEventListener('click', async function() {
+                const selectedType = this.dataset.type;
+                // Update active state
+                document.querySelectorAll('.filter-bubble').forEach(btn => btn.classList.remove('active'));
+                this.classList.add('active');
+                await loadContacts(selectedType);
+            });
         });
     </script>
 </body>
