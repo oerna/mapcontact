@@ -17,7 +17,7 @@ if not os.path.exists(instance_path):
     os.makedirs(instance_path, mode=0o755)
 
 app = Flask(__name__, static_folder='static', static_url_path='')
-app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'your-secret-key-here')
+app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'mapcontacts-secure-key-2024')
 app.config['SESSION_COOKIE_SECURE'] = True
 app.config['SESSION_COOKIE_HTTPONLY'] = True
 app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
@@ -108,7 +108,7 @@ with app.app_context():
     # Create default admin user if it doesn't exist
     if not User.query.filter_by(username='admin').first():
         admin = User(username='admin')
-        admin.set_password('change-this-password')  # Change this password immediately after first login
+        admin.set_password('admin123')  # Set default password
         db.session.add(admin)
         db.session.commit()
 
