@@ -136,7 +136,11 @@ with app.app_context():
 @app.route('/login', methods=['POST'])
 def login():
     try:
-        data = request.json
+        if not request.is_json:
+            logger.warning("Login attempt with non-JSON data")
+            return jsonify({'error': 'Request must be JSON'}), 400
+            
+        data = request.get_json()
         if not data or 'username' not in data or 'password' not in data:
             logger.warning("Login attempt with missing credentials")
             return jsonify({'error': 'Missing username or password'}), 400
@@ -220,8 +224,8 @@ def check_auth():
             return jsonify({'authenticated': True, 'user': current_user.username})
         return jsonify({'authenticated': False}), 401
     except Exception as e:
-        print(f"Auth check error: {str(e)}")
-        return jsonify({'authenticated': False}), 401
+        logger.error(f"Auth check error: {str(e)}")
+        return jsonify({'authenticated': False, 'error': str(e)}), 401
 
 @app.route('/api/change-password', methods=['POST'])
 @login_required

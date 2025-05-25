@@ -1,9 +1,25 @@
 import os
 import sys
 import logging
+from logging.handlers import RotatingFileHandler
 
 # Configure logging
-logging.basicConfig(level=logging.INFO)
+log_dir = '/home/ddiemeo9zafc/mapcontacts/logs'
+if not os.path.exists(log_dir):
+    os.makedirs(log_dir, mode=0o755)
+
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s %(levelname)s %(name)s %(message)s',
+    handlers=[
+        RotatingFileHandler(
+            os.path.join(log_dir, 'app.log'),
+            maxBytes=10485760,  # 10MB
+            backupCount=5
+        ),
+        logging.StreamHandler()
+    ]
+)
 logger = logging.getLogger(__name__)
 
 # Set the current working directory
@@ -28,5 +44,10 @@ os.environ['SQLALCHEMY_TRACK_MODIFICATIONS'] = 'False'
 logger.info("Environment configured for production")
 logger.info(f"Database URL: {os.environ['DATABASE_URL']}")
 
-# Import the Flask application
-from app import app as application 
+try:
+    # Import the Flask application
+    from app import app as application
+    logger.info("Flask application imported successfully")
+except Exception as e:
+    logger.error(f"Failed to import Flask application: {str(e)}")
+    raise 
