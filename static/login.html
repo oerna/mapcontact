@@ -76,6 +76,12 @@
             const username = document.getElementById('username').value;
             const password = document.getElementById('password').value;
             const errorMessage = document.getElementById('errorMessage');
+            const submitButton = document.querySelector('button[type="submit"]');
+
+            // Disable submit button and show loading state
+            submitButton.disabled = true;
+            submitButton.textContent = 'Signing in...';
+            errorMessage.style.display = 'none';
 
             try {
                 const response = await fetch('/login', {
@@ -90,25 +96,19 @@
                 const data = await response.json();
 
                 if (response.ok) {
-                    // Verify login was successful
-                    const authCheck = await fetch('/api/check-auth', {
-                        credentials: 'include'
-                    });
-                    
-                    if (authCheck.ok) {
-                        window.location.href = '/';
-                    } else {
-                        errorMessage.textContent = 'Login failed. Please try again.';
-                        errorMessage.style.display = 'block';
-                    }
+                    window.location.href = '/';
                 } else {
                     errorMessage.textContent = data.error || 'Login failed';
                     errorMessage.style.display = 'block';
+                    submitButton.disabled = false;
+                    submitButton.textContent = 'Sign in';
                 }
             } catch (error) {
                 console.error('Login error:', error);
                 errorMessage.textContent = 'An error occurred. Please try again.';
                 errorMessage.style.display = 'block';
+                submitButton.disabled = false;
+                submitButton.textContent = 'Sign in';
             }
         });
     </script>

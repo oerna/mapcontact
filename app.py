@@ -1,4 +1,4 @@
-from flask import Flask, request, jsonify, send_from_directory, redirect, url_for, send_file
+from flask import Flask, request, jsonify, send_from_directory, redirect, url_for, send_file, session
 from flask_sqlalchemy import SQLAlchemy
 from flask_cors import CORS
 from datetime import datetime, timedelta
@@ -127,7 +127,7 @@ def login():
 def logout():
     logout_user()
     session.clear()  # Clear the session
-    return jsonify({'message': 'Logged out successfully'})
+    return redirect('/login.html')
 
 @app.route('/')
 def index():
