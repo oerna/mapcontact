@@ -1,6 +1,8 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap');
+
 :root {
     --primary-color: #2C3338;
-    --accent-color: #4A90E2;
+    --accent-color: #FF6B35;
     --danger-color: #E25C5C;
     --background-color: #FFFFFF;
     --text-color: #2C3338;
@@ -8,8 +10,25 @@
     --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
     --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
     --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
-    --marker-color: #4A90E2;
+    --marker-color: #FF6B35;
     --marker-border: #FFFFFF;
+    --font-primary: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen-Sans, Ubuntu, Cantarell, 'Helvetica Neue', sans-serif;
+    --font-size-xs: 0.75rem;    /* 12px */
+    --font-size-sm: 0.875rem;   /* 14px */
+    --font-size-base: 1rem;     /* 16px */
+    --font-size-lg: 1.125rem;   /* 18px */
+    --font-size-xl: 1.25rem;    /* 20px */
+    --font-weight-normal: 400;
+    --font-weight-medium: 500;
+    --font-weight-semibold: 600;
+    --line-height-tight: 1.25;
+    --line-height-normal: 1.5;
+    --letter-spacing-tight: -0.01em;
+    --letter-spacing-normal: 0;
+    --popup-bg: rgba(44, 51, 56, 0.95);
+    --popup-text: #FFFFFF;
+    --popup-border: rgba(255, 255, 255, 0.1);
+    --popup-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
 }
 
 body, html {
@@ -17,9 +36,13 @@ body, html {
     padding: 0;
     height: 100%;
     width: 100%;
-    font-family: 'Inter', sans-serif;
+    font-family: var(--font-primary);
+    font-size: var(--font-size-base);
+    line-height: var(--line-height-normal);
     color: var(--text-color);
     background-color: var(--background-color);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
 }
 
 #map {
@@ -33,13 +56,16 @@ body, html {
     top: 50%;
     left: 50%;
     transform: translate(-50%, -50%);
-    background: white;
-    padding: 20px;
-    border-radius: 8px;
-    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    background: var(--popup-bg);
+    padding: 24px;
+    border-radius: 12px;
+    box-shadow: var(--popup-shadow);
     z-index: 1000;
     max-width: 500px;
     width: 90%;
+    border: 1px solid var(--popup-border);
+    color: var(--popup-text);
+    backdrop-filter: blur(10px);
 }
 
 .form-overlay.active {
@@ -57,18 +83,17 @@ body, html {
     background: none;
     border: none;
     font-size: 24px;
-    color: var(--text-color);
+    color: var(--popup-text);
     cursor: pointer;
     padding: 0;
     width: auto;
-    opacity: 0.6;
-    transition: opacity 0.2s ease;
+    opacity: 0.7;
+    transition: all 0.2s ease;
 }
 
 .close-btn:hover {
     opacity: 1;
-    transform: none;
-    box-shadow: none;
+    color: var(--accent-color);
 }
 
 .add-contact-btn {
@@ -99,9 +124,11 @@ body, html {
 
 .form-overlay h3 {
     margin: 0 0 20px 0;
-    font-weight: 600;
-    font-size: 1.25rem;
-    color: var(--primary-color);
+    font-size: var(--font-size-xl);
+    font-weight: var(--font-weight-semibold);
+    line-height: var(--line-height-tight);
+    letter-spacing: var(--letter-spacing-tight);
+    color: var(--popup-text);
 }
 
 .form-group {
@@ -111,20 +138,26 @@ body, html {
 .form-group label {
     display: block;
     margin-bottom: 6px;
-    font-size: 0.875rem;
-    font-weight: 500;
-    color: var(--text-color);
+    font-size: var(--font-size-sm);
+    font-weight: var(--font-weight-medium);
+    line-height: var(--line-height-tight);
+    color: var(--popup-text);
+    opacity: 0.9;
 }
 
 .form-group input, .form-group textarea {
     width: 100%;
     padding: 10px 12px;
-    border: 1px solid var(--border-color);
+    border: 1px solid var(--popup-border);
     border-radius: 8px;
-    font-family: 'Inter', sans-serif;
-    font-size: 0.875rem;
+    font-family: var(--font-primary);
+    font-size: var(--font-size-sm);
+    font-weight: var(--font-weight-medium);
+    line-height: var(--line-height-normal);
     transition: all 0.2s ease;
     box-sizing: border-box;
+    background: rgba(255, 255, 255, 0.1);
+    color: var(--popup-text);
 }
 
 .form-group textarea {
@@ -135,7 +168,8 @@ body, html {
 .form-group input:focus, .form-group textarea:focus {
     outline: none;
     border-color: var(--accent-color);
-    box-shadow: 0 0 0 3px rgba(74, 144, 226, 0.1);
+    box-shadow: 0 0 0 3px rgba(255, 107, 53, 0.1);
+    background: rgba(255, 255, 255, 0.15);
 }
 
 button {
@@ -146,9 +180,10 @@ button {
     border-radius: 8px;
     cursor: pointer;
     width: 100%;
-    font-family: 'Inter', sans-serif;
-    font-weight: 500;
-    font-size: 0.875rem;
+    font-family: var(--font-primary);
+    font-size: var(--font-size-sm);
+    font-weight: var(--font-weight-medium);
+    line-height: var(--line-height-normal);
     transition: all 0.2s ease;
 }
 
@@ -190,19 +225,20 @@ button:hover {
 .settings-menu {
     position: fixed;
     top: 20px;
-    right: 88px;
-    background: var(--background-color);
-    padding: 24px;
+    background: var(--popup-bg);
+    padding: 20px;
     border-radius: 12px;
-    box-shadow: var(--shadow-lg);
+    box-shadow: var(--popup-shadow);
     z-index: 1000;
-    width: 240px;
     backdrop-filter: blur(10px);
-    border: 1px solid var(--border-color);
-    transform: translateY(-20px);
-    transition: transform 0.3s ease-in-out, opacity 0.3s ease-in-out, visibility 0.3s;
+    border: 1px solid var(--popup-border);
+    transform: translateY(-10px);
+    transition: all 0.2s ease;
     opacity: 0;
     visibility: hidden;
+    color: var(--popup-text);
+    right: 88px;
+    width: 240px;
 }
 
 .settings-menu.active {
@@ -220,9 +256,11 @@ button:hover {
 
 .settings-header h3 {
     margin: 0;
-    font-weight: 600;
-    font-size: 1.25rem;
-    color: var(--primary-color);
+    font-size: var(--font-size-xl);
+    font-weight: var(--font-weight-semibold);
+    line-height: var(--line-height-tight);
+    letter-spacing: var(--letter-spacing-tight);
+    color: var(--popup-text);
 }
 
 .settings-content {
@@ -233,18 +271,24 @@ button:hover {
 
 .settings-btn-item {
     text-align: left;
-    padding: 12px;
+    padding: 10px 16px;
     border-radius: 8px;
-    background: var(--background-color);
-    color: var(--text-color);
-    border: 1px solid var(--border-color);
+    background: transparent;
+    color: var(--popup-text);
+    border: 1px solid var(--popup-border);
     cursor: pointer;
-    font-size: 0.875rem;
+    font-size: var(--font-size-sm);
+    font-weight: var(--font-weight-medium);
+    line-height: var(--line-height-normal);
     transition: all 0.2s ease;
+    width: 100%;
+    margin-bottom: 8px;
 }
 
 .settings-btn-item:hover {
-    background: var(--border-color);
+    background: rgba(255, 255, 255, 0.1);
+    border-color: var(--accent-color);
+    color: var(--accent-color);
     transform: translateY(-1px);
 }
 
@@ -255,7 +299,7 @@ button:hover {
 
 .settings-btn-item.danger:hover {
     background: var(--danger-color);
-    color: white;
+    color: var(--popup-text);
 }
 
 #loading {
@@ -264,30 +308,136 @@ button:hover {
     top: 50%;
     left: 50%;
     transform: translate(-50%, -50%);
-    background: rgba(255, 255, 255, 0.95);
+    background: var(--popup-bg);
     padding: 16px 24px;
     border-radius: 12px;
-    box-shadow: var(--shadow-lg);
+    box-shadow: var(--popup-shadow);
     z-index: 2000;
-    font-weight: 500;
+    font-size: var(--font-size-base);
+    font-weight: var(--font-weight-medium);
     backdrop-filter: blur(10px);
+    color: var(--popup-text);
 }
 
 .contact-popup {
-    min-width: 200px;
+    min-width: 240px;
+    padding: 16px;
+    color: var(--popup-text);
+}
+
+.contact-popup .name {
+    font-size: var(--font-size-lg);
+    font-weight: var(--font-weight-semibold);
+    line-height: var(--line-height-tight);
+    letter-spacing: var(--letter-spacing-tight);
+    color: var(--popup-text);
+    margin-bottom: 12px;
+}
+
+.contact-popup .company {
+    color: var(--accent-color);
+    font-weight: var(--font-weight-medium);
+    margin-bottom: 16px;
 }
 
 .contact-popup p {
-    margin: 5px 0;
+    margin: 8px 0;
+    font-size: var(--font-size-sm);
+    font-weight: var(--font-weight-medium);
+    line-height: var(--line-height-normal);
+    color: var(--popup-text);
+    opacity: 0.9;
 }
 
+.contact-popup .info {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 8px;
+}
+
+.contact-popup .info svg {
+    width: 16px;
+    height: 16px;
+    color: var(--popup-text);
+    opacity: 0.7;
+}
+
+.contact-popup .button-group {
+    display: flex;
+    gap: 8px;
+    margin-top: 16px;
+}
+
+.contact-popup .edit-contact-btn,
+.contact-popup .delete-contact-btn {
+    flex: 1;
+    padding: 8px 16px;
+    border-radius: 8px;
+    font-size: var(--font-size-sm);
+    font-weight: var(--font-weight-medium);
+    line-height: var(--line-height-normal);
+    transition: all 0.2s ease;
+    border: 1px solid var(--popup-border);
+    background: transparent;
+    color: var(--popup-text);
+}
+
+.contact-popup .edit-contact-btn {
+    color: var(--accent-color);
+    border-color: var(--accent-color);
+}
+
+.contact-popup .delete-contact-btn {
+    color: var(--danger-color);
+    border-color: var(--danger-color);
+}
+
+.contact-popup .edit-contact-btn:hover {
+    background: var(--accent-color);
+    color: var(--popup-text);
+    transform: translateY(-1px);
+}
+
+.contact-popup .delete-contact-btn:hover {
+    background: var(--danger-color);
+    color: var(--popup-text);
+    transform: translateY(-1px);
+}
+
+/* Leaflet popup customization */
 .leaflet-popup-content-wrapper {
+    background: var(--popup-bg);
     border-radius: 12px;
-    box-shadow: var(--shadow-lg);
+    box-shadow: var(--popup-shadow);
+    border: 1px solid var(--popup-border);
+    padding: 0;
+    overflow: hidden;
+    backdrop-filter: blur(10px);
+}
+
+.leaflet-popup-content {
+    margin: 0;
+    padding: 0;
+    color: var(--popup-text);
 }
 
 .leaflet-popup-tip {
-    box-shadow: var(--shadow-sm);
+    background: var(--popup-bg);
+    box-shadow: var(--popup-shadow);
+}
+
+.leaflet-popup-close-button {
+    color: var(--popup-text);
+    opacity: 0.7;
+    transition: opacity 0.2s ease;
+    padding: 8px;
+    font-size: 20px;
+}
+
+.leaflet-popup-close-button:hover {
+    opacity: 1;
+    color: var(--accent-color);
 }
 
 /* Circle Marker Styles */
@@ -402,26 +552,28 @@ button:hover {
 
 .filter-header h3 {
     margin: 0;
-    font-weight: 600;
-    font-size: 1.25rem;
-    color: var(--primary-color);
+    font-size: var(--font-size-xl);
+    font-weight: var(--font-weight-semibold);
+    line-height: var(--line-height-tight);
+    letter-spacing: var(--letter-spacing-tight);
+    color: var(--popup-text);
 }
 
 .filter-menu {
     position: fixed;
     top: 20px;
-    right: 156px;
-    background: var(--background-color);
-    padding: 24px;
+    background: var(--popup-bg);
+    padding: 20px;
     border-radius: 12px;
-    box-shadow: var(--shadow-lg);
+    box-shadow: var(--popup-shadow);
     z-index: 1000;
     backdrop-filter: blur(10px);
-    border: 1px solid var(--border-color);
-    transform: translateY(-20px) scale(0.95);
+    border: 1px solid var(--popup-border);
+    transform: translateY(-10px) scale(0.95);
     transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.3s ease-in-out, visibility 0.3s;
     opacity: 0;
     visibility: hidden;
+    right: 156px;
 }
 
 .filter-menu.active {
@@ -444,8 +596,9 @@ button:hover {
     padding: 8px 16px;
     border-radius: 20px;
     cursor: pointer;
-    font-size: 0.875rem;
-    font-weight: 500;
+    font-size: var(--font-size-sm);
+    font-weight: var(--font-weight-medium);
+    line-height: var(--line-height-normal);
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     white-space: nowrap;
     box-shadow: var(--shadow-sm);
@@ -472,4 +625,186 @@ button:hover {
 
 .filter-content {
     padding: 20px;
+}
+
+/* Common button styles */
+.settings-btn, .filter-btn, .add-contact-btn {
+    position: fixed;
+    top: 20px;
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    background: var(--background-color);
+    color: var(--text-color);
+    border: 1px solid var(--border-color);
+    cursor: pointer;
+    z-index: 999;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+    box-shadow: var(--shadow-sm);
+    transition: all 0.2s ease;
+}
+
+.settings-btn {
+    right: 88px;
+}
+
+.filter-btn {
+    right: 156px;
+}
+
+.add-contact-btn {
+    right: 20px;
+    background: var(--accent-color);
+    color: white;
+    border: none;
+}
+
+.settings-btn:hover, .filter-btn:hover, .add-contact-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-md);
+    border-color: var(--accent-color);
+    color: var(--accent-color);
+}
+
+.add-contact-btn:hover {
+    color: white;
+    background: var(--accent-color);
+    opacity: 0.9;
+}
+
+.settings-btn svg, .filter-btn svg {
+    width: 20px;
+    height: 20px;
+    transition: transform 0.2s ease;
+}
+
+.settings-btn:hover svg, .filter-btn:hover svg {
+    transform: scale(1.1);
+}
+
+/* Menu styles */
+.settings-menu, .filter-menu {
+    position: fixed;
+    top: 20px;
+    background: var(--popup-bg);
+    padding: 20px;
+    border-radius: 12px;
+    box-shadow: var(--popup-shadow);
+    z-index: 1000;
+    backdrop-filter: blur(10px);
+    border: 1px solid var(--popup-border);
+    transform: translateY(-10px);
+    transition: all 0.2s ease;
+    opacity: 0;
+    visibility: hidden;
+    color: var(--popup-text);
+}
+
+.settings-menu {
+    right: 88px;
+    width: 240px;
+}
+
+.filter-menu {
+    right: 156px;
+}
+
+.settings-menu.active, .filter-menu.active {
+    transform: translateY(0);
+    opacity: 1;
+    visibility: visible;
+}
+
+/* Menu button items */
+.settings-btn-item, .filter-bubble {
+    text-align: left;
+    padding: 10px 16px;
+    border-radius: 8px;
+    background: transparent;
+    color: var(--popup-text);
+    border: 1px solid var(--popup-border);
+    cursor: pointer;
+    font-size: var(--font-size-sm);
+    transition: all 0.2s ease;
+    width: 100%;
+    margin-bottom: 8px;
+}
+
+.settings-btn-item:hover, .filter-bubble:hover {
+    background: rgba(255, 255, 255, 0.1);
+    border-color: var(--accent-color);
+    color: var(--accent-color);
+    transform: translateY(-1px);
+}
+
+.settings-btn-item.danger {
+    color: var(--danger-color);
+    border-color: var(--danger-color);
+}
+
+.settings-btn-item.danger:hover {
+    background: var(--danger-color);
+    color: var(--popup-text);
+}
+
+.filter-bubble.active {
+    background: var(--accent-color);
+    color: var(--popup-text);
+    border-color: var(--accent-color);
+}
+
+.filter-bubble.active:hover {
+    opacity: 0.9;
+    transform: translateY(-1px);
+}
+
+/* Form overlay styles */
+.form-overlay {
+    display: none;
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: var(--popup-bg);
+    padding: 24px;
+    border-radius: 12px;
+    box-shadow: var(--popup-shadow);
+    z-index: 1000;
+    max-width: 500px;
+    width: 90%;
+    border: 1px solid var(--popup-border);
+    color: var(--popup-text);
+    backdrop-filter: blur(10px);
+}
+
+.form-overlay.active {
+    display: block;
+}
+
+.form-overlay h3 {
+    color: var(--popup-text);
+    margin: 0 0 20px 0;
+    font-weight: var(--font-weight-semibold);
+    font-size: var(--font-size-xl);
+}
+
+.form-overlay button[type="submit"] {
+    background: var(--accent-color);
+    color: var(--popup-text);
+    border: none;
+    padding: 12px 24px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: var(--font-size-sm);
+    font-weight: var(--font-weight-medium);
+    transition: all 0.2s ease;
+    width: 100%;
+}
+
+.form-overlay button[type="submit"]:hover {
+    opacity: 0.9;
+    transform: translateY(-1px);
 } 
