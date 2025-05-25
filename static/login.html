@@ -53,6 +53,15 @@
     </main>
 
     <script>
+        // Check if already logged in
+        fetch('/api/check-auth', {
+            credentials: 'include'
+        }).then(response => {
+            if (response.ok) {
+                window.location.href = '/';
+            }
+        });
+
         document.getElementById('loginForm').addEventListener('submit', async (e) => {
             e.preventDefault();
             const username = document.getElementById('username').value;
@@ -72,7 +81,17 @@
                 const data = await response.json();
 
                 if (response.ok) {
-                    window.location.href = '/';
+                    // Verify login was successful
+                    const authCheck = await fetch('/api/check-auth', {
+                        credentials: 'include'
+                    });
+                    
+                    if (authCheck.ok) {
+                        window.location.href = '/';
+                    } else {
+                        errorMessage.textContent = 'Login failed. Please try again.';
+                        errorMessage.style.display = 'block';
+                    }
                 } else {
                     errorMessage.textContent = data.error || 'Login failed';
                     errorMessage.style.display = 'block';

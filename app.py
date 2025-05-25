@@ -22,7 +22,20 @@ app.config['SESSION_COOKIE_SECURE'] = os.environ.get('SESSION_COOKIE_SECURE', 'T
 app.config['SESSION_COOKIE_HTTPONLY'] = os.environ.get('SESSION_COOKIE_HTTPONLY', 'True').lower() == 'true'
 app.config['SESSION_COOKIE_SAMESITE'] = os.environ.get('SESSION_COOKIE_SAMESITE', 'Lax')
 app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(seconds=int(os.environ.get('PERMANENT_SESSION_LIFETIME', '86400')))
-CORS(app, supports_credentials=True)
+app.config['SESSION_COOKIE_DOMAIN'] = 'contactbook.oerna.de'
+
+# Configure CORS
+CORS(app, 
+     supports_credentials=True,
+     resources={
+         r"/*": {
+             "origins": ["https://contactbook.oerna.de"],
+             "methods": ["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],
+             "allow_headers": ["Content-Type", "Authorization"],
+             "expose_headers": ["Content-Type", "Authorization"],
+             "supports_credentials": True
+         }
+     })
 
 # Database configuration
 if os.environ.get('DATABASE_URL'):
@@ -104,7 +117,8 @@ def login():
     data = request.json
     user = User.query.filter_by(username=data.get('username')).first()
     if user and user.check_password(data.get('password')):
-        login_user(user)
+        login_user(user, remember=True)
+        session.permanent = True
         return jsonify({'message': 'Logged in successfully'})
     return jsonify({'error': 'Invalid username or password'}), 401
 
@@ -116,6 +130,8 @@ def logout():
 
 @app.route('/')
 def index():
+    if not current_user.is_authenticated:
+        return redirect('/login.html')
     return app.send_static_file('index.html')
 
 @app.route('/api/contacts', methods=['GET'])
@@ -159,7 +175,7 @@ def add_contact():
 @app.route('/api/check-auth')
 def check_auth():
     if current_user.is_authenticated:
-        return jsonify({'authenticated': True})
+        return jsonify({'authenticated': True, 'user': current_user.username})
     return jsonify({'authenticated': False}), 401
 
 @app.route('/api/change-password', methods=['POST'])
