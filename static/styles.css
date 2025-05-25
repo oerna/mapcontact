@@ -807,4 +807,139 @@ button:hover {
 .form-overlay button[type="submit"]:hover {
     opacity: 0.9;
     transform: translateY(-1px);
+}
+
+/* Mobile-specific styles */
+@media (max-width: 768px) {
+    .settings-btn, .filter-btn, .add-contact-btn {
+        width: 48px;
+        height: 48px;
+        top: 16px;
+    }
+
+    .settings-btn {
+        right: 72px;
+    }
+
+    .filter-btn {
+        right: 136px;
+    }
+
+    .form-overlay {
+        width: 100%;
+        max-width: none;
+        height: 90vh;
+        top: auto;
+        bottom: 0;
+        transform: translateY(100%);
+        border-radius: 20px 20px 0 0;
+        padding: 20px;
+    }
+
+    .form-overlay.active {
+        transform: translateY(0);
+    }
+
+    .form-header {
+        margin-bottom: 16px;
+    }
+
+    .form-group {
+        margin-bottom: 12px;
+    }
+
+    .form-group input, 
+    .form-group textarea,
+    .form-group select {
+        font-size: 16px; /* Prevent zoom on iOS */
+        padding: 12px;
+    }
+
+    .settings-menu, 
+    .filter-menu {
+        width: 100%;
+        max-width: none;
+        height: 90vh;
+        top: auto;
+        bottom: 0;
+        transform: translateY(100%);
+        border-radius: 20px 20px 0 0;
+        padding: 20px;
+    }
+
+    .settings-menu.active,
+    .filter-menu.active {
+        transform: translateY(0);
+    }
+
+    .settings-btn-item,
+    .filter-bubble {
+        padding: 16px;
+        font-size: 16px;
+        margin-bottom: 8px;
+    }
+
+    .filter-bubbles {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 8px;
+        margin-bottom: 16px;
+    }
+
+    .contact-popup {
+        max-width: 280px;
+    }
+
+    .contact-popup .button-group {
+        flex-direction: column;
+        gap: 8px;
+    }
+
+    .contact-popup .edit-contact-btn,
+    .contact-popup .delete-contact-btn {
+        width: 100%;
+    }
+
+    /* Improve touch targets */
+    button {
+        min-height: 44px;
+    }
+
+    .close-btn {
+        width: 44px;
+        height: 44px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    /* Add safe area insets for modern mobile browsers */
+    @supports (padding: max(0px)) {
+        .form-overlay,
+        .settings-menu,
+        .filter-menu {
+            padding-bottom: max(20px, env(safe-area-inset-bottom));
+        }
+    }
+}
+
+/* Add smooth transitions for mobile */
+.form-overlay,
+.settings-menu,
+.filter-menu {
+    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Improve map controls for mobile */
+@media (max-width: 768px) {
+    .leaflet-control-zoom {
+        margin: 16px !important;
+    }
+
+    .leaflet-control-zoom a {
+        width: 44px !important;
+        height: 44px !important;
+        line-height: 44px !important;
+        font-size: 20px !important;
+    }
 } 
