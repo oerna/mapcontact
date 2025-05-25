@@ -9,7 +9,12 @@ from werkzeug.security import generate_password_hash, check_password_hash
 import os
 import csv
 import io
+import logging
 from werkzeug.utils import secure_filename
+
+# Configure logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 # Ensure instance directory exists with proper permissions
 instance_path = os.path.abspath(os.path.join(os.path.dirname(__file__), 'instance'))
@@ -39,19 +44,24 @@ CORS(app,
      })
 
 # Database configuration
-if os.environ.get('DATABASE_URL'):
-    # Production database (MySQL)
-    database_url = os.environ.get('DATABASE_URL')
-    app.config['SQLALCHEMY_DATABASE_URI'] = database_url
-    print(f"Using production database: {database_url}")
-else:
-    # Development database (SQLite)
-    db_path = os.path.join(instance_path, 'contacts.db')
-    app.config['SQLALCHEMY_DATABASE_URI'] = f'sqlite:///{db_path}'
-    print(f"Using development database: {db_path}")
+try:
+    if os.environ.get('DATABASE_URL'):
+        # Production database (MySQL)
+        database_url = os.environ.get('DATABASE_URL')
+        app.config['SQLALCHEMY_DATABASE_URI'] = database_url
+        logger.info(f"Using production database: {database_url}")
+    else:
+        # Development database (SQLite)
+        db_path = os.path.join(instance_path, 'contacts.db')
+        app.config['SQLALCHEMY_DATABASE_URI'] = f'sqlite:///{db_path}'
+        logger.info(f"Using development database: {db_path}")
 
-app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-db = SQLAlchemy(app)
+    app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+    db = SQLAlchemy(app)
+    logger.info("Database connection configured successfully")
+except Exception as e:
+    logger.error(f"Database configuration error: {str(e)}")
+    raise
 
 # Initialize Flask-Login
 login_manager = LoginManager()
@@ -107,41 +117,45 @@ def load_user(user_id):
 
 # Create the database tables and admin user
 with app.app_context():
-    db.create_all()
-    # Create default admin user if it doesn't exist
-    admin = User.query.filter_by(username='admin').first()
-    if not admin:
-        admin = User(username='admin')
-        admin.set_password('admin123')
-        db.session.add(admin)
-        db.session.commit()
-        print("Created admin user")
-    else:
-        print("Admin user already exists")
+    try:
+        db.create_all()
+        # Create default admin user if it doesn't exist
+        admin = User.query.filter_by(username='admin').first()
+        if not admin:
+            admin = User(username='admin')
+            admin.set_password('admin123')
+            db.session.add(admin)
+            db.session.commit()
+            logger.info("Created admin user")
+        else:
+            logger.info("Admin user already exists")
+    except Exception as e:
+        logger.error(f"Database initialization error: {str(e)}")
+        raise
 
 @app.route('/login', methods=['POST'])
 def login():
     try:
         data = request.json
         if not data or 'username' not in data or 'password' not in data:
-            print("Login attempt with missing credentials")
+            logger.warning("Login attempt with missing credentials")
             return jsonify({'error': 'Missing username or password'}), 400
             
         user = User.query.filter_by(username=data['username']).first()
         if not user:
-            print(f"Login attempt with non-existent username: {data['username']}")
+            logger.warning(f"Login attempt with non-existent username: {data['username']}")
             return jsonify({'error': 'Invalid username or password'}), 401
             
         if not user.check_password(data['password']):
-            print(f"Login attempt with incorrect password for user: {data['username']}")
+            logger.warning(f"Login attempt with incorrect password for user: {data['username']}")
             return jsonify({'error': 'Invalid username or password'}), 401
             
         login_user(user, remember=True)
         session.permanent = True
-        print(f"Successful login for user: {data['username']}")
+        logger.info(f"Successful login for user: {data['username']}")
         return jsonify({'message': 'Logged in successfully'})
     except Exception as e:
-        print(f"Login error: {str(e)}")
+        logger.error(f"Login error: {str(e)}")
         return jsonify({'error': 'An error occurred during login'}), 500
 
 @app.route('/logout')
