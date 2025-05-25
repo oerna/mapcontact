@@ -5,4 +5,5 @@ geopy==2.4.1
 Flask-CORS==4.0.0
 Flask-Login==0.6.3
 Werkzeug==3.0.1
-psycopg2-binary==2.9.9  # PostgreSQL adapter for Python 
+psycopg2-binary==2.9.9  # PostgreSQL adapter for Python
+mysqlclient==2.2.4 
