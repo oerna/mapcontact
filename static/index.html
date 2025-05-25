@@ -15,12 +15,33 @@
             <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
         </svg>
     </button>
+
+    <button id="filterBtn" class="filter-btn" aria-label="Filter">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"></polygon>
+        </svg>
+    </button>
+
     <div class="settings-menu" id="settingsMenu">
         <div class="settings-header">
             <h3>Settings</h3>
             <button type="button" class="close-btn" id="closeSettingsBtn" aria-label="Close settings">&times;</button>
         </div>
         <div class="settings-content">
+            <button id="changePasswordBtn" class="settings-btn-item" onclick="window.location.href='/change-password.html'">Change Password</button>
+            <button id="exportContactsBtn" class="settings-btn-item">Export Contacts</button>
+            <button id="importContactsBtn" class="settings-btn-item">Import Contacts</button>
+            <input type="file" id="fileInput" accept=".csv" style="display: none">
+            <button id="logoutBtn" class="settings-btn-item danger">Logout</button>
+        </div>
+    </div>
+
+    <div class="filter-menu" id="filterMenu">
+        <div class="filter-header">
+            <h3>Filter Contacts</h3>
+            <button type="button" class="close-btn" id="closeFilterBtn" aria-label="Close filter">&times;</button>
+        </div>
+        <div class="filter-content">
             <div class="form-group">
                 <label for="contactTypeFilter">Filter by Contact Type</label>
                 <select id="contactTypeFilter" class="form-control">
@@ -32,11 +53,6 @@
                     <option value="Other">Other</option>
                 </select>
             </div>
-            <button id="changePasswordBtn" class="settings-btn-item" onclick="window.location.href='/change-password.html'">Change Password</button>
-            <button id="exportContactsBtn" class="settings-btn-item">Export Contacts</button>
-            <button id="importContactsBtn" class="settings-btn-item">Import Contacts</button>
-            <input type="file" id="fileInput" accept=".csv" style="display: none">
-            <button id="logoutBtn" class="settings-btn-item danger">Logout</button>
         </div>
     </div>
 
@@ -115,7 +131,7 @@
             <div class="form-group">
                 <label for="editContactType">Contact Type</label>
                 <select id="editContactType" class="form-control">
-                    <option value="Other" selected>Other</option>
+                    <option value="Other">Other</option>
                     <option value="Place">Place</option>
                     <option value="Artist">Artist</option>
                     <option value="Booker">Booker</option>
@@ -202,6 +218,12 @@
             document.getElementById('settingsMenu'),
             document.getElementById('settingsBtn'),
             document.getElementById('closeSettingsBtn')
+        );
+
+        setupBottomSheet(
+            document.getElementById('filterMenu'),
+            document.getElementById('filterBtn'),
+            document.getElementById('closeFilterBtn')
         );
 
         // When form is submitted successfully, close the form
@@ -338,6 +360,7 @@
                     ${contact.email ? `<p>Email: ${contact.email}</p>` : ''}
                     ${contact.telephone ? `<p>Tel: ${contact.telephone}</p>` : ''}
                     <p>Address: ${contact.address}</p>
+                    ${contact.contact_type ? `<p>Type: ${contact.contact_type}</p>` : ''}
                     ${contact.notes ? `<p>Notes: ${contact.notes}</p>` : ''}
                     <div class="button-group">
                         <button class="edit-contact-btn" onclick="editContact(${JSON.stringify(contact).replace(/"/g, '&quot;')})">Edit</button>
@@ -421,6 +444,9 @@
             // Store the original contact data for comparison
             window.originalContact = contact;
             
+            console.log('Editing contact:', contact);
+            console.log('Contact type:', contact.contact_type);
+            
             // Fill the edit form with contact data
             document.getElementById('editContactId').value = contact.id;
             document.getElementById('editName').value = contact.name;
@@ -428,7 +454,7 @@
             document.getElementById('editEmail').value = contact.email || '';
             document.getElementById('editTelephone').value = contact.telephone || '';
             document.getElementById('editAddress').value = contact.address;
-            document.getElementById('editContactType').value = contact.contact_type || '';
+            document.getElementById('editContactType').value = contact.contact_type || 'Other';
             document.getElementById('editNotes').value = contact.notes || '';
             
             // Show the edit form
@@ -466,7 +492,11 @@
                     longitude: longitude
                 };
 
-                console.log('Updating contact with data:', formData);
+                console.log('=== DEBUG: Contact Update Request ===');
+                console.log('Form data:', formData);
+                console.log('Contact type from form:', document.getElementById('editContactType').value);
+                console.log('Contact type in formData:', formData.contact_type);
+                console.log('JSON stringified data:', JSON.stringify(formData));
                 
                 document.getElementById('loading').textContent = 'Updating contact...';
                 const response = await fetch(`/api/contacts/${contactId}`, {
@@ -495,6 +525,7 @@
 
                 const updatedContact = await response.json();
                 console.log('Contact updated successfully:', updatedContact);
+                console.log('=== END DEBUG ===');
 
                 // Clear all existing markers and reload contacts
                 map.eachLayer((layer) => {

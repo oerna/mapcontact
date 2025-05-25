@@ -187,6 +187,12 @@ def update_contact(contact_id):
         return jsonify({'error': 'Contact not found'}), 404
         
     data = request.json
+    print("=== DEBUG: Contact Update ===")
+    print("Contact ID:", contact_id)
+    print("Raw request data:", request.get_data())
+    print("Parsed request data:", data)
+    print("Current contact type:", contact.contact_type)
+    print("Requested contact type:", data.get('contact_type'))
     
     # Update the contact fields
     contact.name = data.get('name', contact.name)
@@ -198,10 +204,23 @@ def update_contact(contact_id):
     contact.longitude = data.get('longitude', contact.longitude)
     contact.notes = data.get('notes', contact.notes)
     
+    # Directly set contact_type from request data
+    if 'contact_type' in data:
+        print("Setting contact type to:", data['contact_type'])
+        contact.contact_type = data['contact_type']
+        db.session.flush()  # Flush changes to see if they're applied
+        print("Contact type after flush:", contact.contact_type)
+    
+    print("Final contact type:", contact.contact_type)
+    
     try:
         db.session.commit()
+        print("Contact updated successfully")
+        print("Returning contact data:", contact.to_dict())
+        print("=== END DEBUG ===")
         return jsonify(contact.to_dict())
     except Exception as e:
+        print("Error updating contact:", str(e))
         db.session.rollback()
         return jsonify({'error': str(e)}), 500
 
