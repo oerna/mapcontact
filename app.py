@@ -18,18 +18,18 @@ if not os.path.exists(instance_path):
 
 app = Flask(__name__, static_folder='static', static_url_path='')
 app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'your-secret-key-here')
-app.config['SESSION_COOKIE_SECURE'] = os.environ.get('SESSION_COOKIE_SECURE', 'True').lower() == 'true'
-app.config['SESSION_COOKIE_HTTPONLY'] = os.environ.get('SESSION_COOKIE_HTTPONLY', 'True').lower() == 'true'
-app.config['SESSION_COOKIE_SAMESITE'] = os.environ.get('SESSION_COOKIE_SAMESITE', 'Lax')
+app.config['SESSION_COOKIE_SECURE'] = True
+app.config['SESSION_COOKIE_HTTPONLY'] = True
+app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
 app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(seconds=int(os.environ.get('PERMANENT_SESSION_LIFETIME', '86400')))
-app.config['SESSION_COOKIE_DOMAIN'] = 'contactbook.oerna.de'
+app.config['SESSION_COOKIE_DOMAIN'] = None  # Remove domain restriction to allow local development
 
 # Configure CORS
 CORS(app, 
      supports_credentials=True,
      resources={
          r"/*": {
-             "origins": ["https://contactbook.oerna.de"],
+             "origins": ["https://contactbook.oerna.de", "http://localhost:8000", "http://127.0.0.1:8000"],
              "methods": ["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],
              "allow_headers": ["Content-Type", "Authorization"],
              "expose_headers": ["Content-Type", "Authorization"],
@@ -126,6 +126,7 @@ def login():
 @login_required
 def logout():
     logout_user()
+    session.clear()  # Clear the session
     return jsonify({'message': 'Logged out successfully'})
 
 @app.route('/')

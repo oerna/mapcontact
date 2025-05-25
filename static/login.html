@@ -62,6 +62,15 @@
             }
         });
 
+        // Handle logout response
+        if (window.location.search.includes('logout')) {
+            fetch('/logout', {
+                credentials: 'include'
+            }).then(() => {
+                window.location.href = '/login.html';
+            });
+        }
+
         document.getElementById('loginForm').addEventListener('submit', async (e) => {
             e.preventDefault();
             const username = document.getElementById('username').value;
