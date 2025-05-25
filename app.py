@@ -102,21 +102,28 @@ class Contact(db.Model):
 def load_user(user_id):
     return User.query.get(int(user_id))
 
-# Create the database tables
+# Create the database tables and admin user
 with app.app_context():
     db.create_all()
     # Create default admin user if it doesn't exist
-    if not User.query.filter_by(username='admin').first():
+    admin = User.query.filter_by(username='admin').first()
+    if not admin:
         admin = User(username='admin')
-        admin.set_password('admin123')  # Set default password
+        admin.set_password('admin123')
         db.session.add(admin)
         db.session.commit()
+        print("Created admin user")
+    else:
+        print("Admin user already exists")
 
 @app.route('/login', methods=['POST'])
 def login():
     data = request.json
-    user = User.query.filter_by(username=data.get('username')).first()
-    if user and user.check_password(data.get('password')):
+    if not data or 'username' not in data or 'password' not in data:
+        return jsonify({'error': 'Missing username or password'}), 400
+        
+    user = User.query.filter_by(username=data['username']).first()
+    if user and user.check_password(data['password']):
         login_user(user, remember=True)
         session.permanent = True
         return jsonify({'message': 'Logged in successfully'})
