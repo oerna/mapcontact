@@ -41,9 +41,11 @@ function start_flask_app() {
     }
     
     // Start the application with Gunicorn
-    $command = "cd /home/ddiemeo9zafc/mapcontacts && nohup gunicorn --bind 127.0.0.1:8000 --workers 2 --timeout 120 --access-logfile $log_file --error-logfile $log_file app:app > $log_file 2>&1 & echo $! > $pid_file";
-    exec($command);
+    $command = "cd /home/ddiemeo9zafc/mapcontacts && nohup gunicorn --bind 127.0.0.1:8000 --workers 1 --timeout 120 --access-logfile $log_file --error-logfile $log_file --capture-output --log-level debug app:app > $log_file 2>&1 & echo $! > $pid_file";
+    exec($command, $output, $return_var);
     log_message("Started Flask application with command: $command");
+    log_message("Command output: " . implode("\n", $output));
+    log_message("Return value: $return_var");
     
     // Wait for the application to start
     $max_attempts = 10;
@@ -51,6 +53,8 @@ function start_flask_app() {
     while ($attempt < $max_attempts) {
         if (file_exists($pid_file)) {
             $pid = file_get_contents($pid_file);
+            log_message("Checking process with PID: $pid");
+            
             if (is_process_running($pid)) {
                 // Check if the application is responding
                 $ch = curl_init("http://127.0.0.1:8000/");
@@ -58,19 +62,34 @@ function start_flask_app() {
                 curl_setopt($ch, CURLOPT_TIMEOUT, 2);
                 $response = curl_exec($ch);
                 $http_code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+                $error = curl_error($ch);
                 curl_close($ch);
+                
+                log_message("HTTP response code: $http_code");
+                if ($error) {
+                    log_message("Curl error: $error");
+                }
                 
                 if ($http_code > 0) {
                     log_message("Flask application started successfully with PID: $pid");
                     return true;
                 }
+            } else {
+                log_message("Process $pid is not running");
             }
+        } else {
+            log_message("PID file does not exist");
         }
         sleep(1);
         $attempt++;
     }
     
+    // If we get here, the application failed to start
     log_message("Failed to start Flask application after $max_attempts attempts");
+    if (file_exists($log_file)) {
+        log_message("Application log contents:");
+        log_message(file_get_contents($log_file));
+    }
     return false;
 }
 
@@ -79,7 +98,7 @@ if (!file_exists($pid_file) || !is_process_running(file_get_contents($pid_file))
     log_message("Flask application not running, starting it...");
     if (!start_flask_app()) {
         header('HTTP/1.1 500 Internal Server Error');
-        echo "Failed to start the application. Please check the error logs.";
+        echo "Failed to start the application. Please check the error logs at /php_error.log and /app.log";
         exit;
     }
 }
