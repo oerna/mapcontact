@@ -1,4 +1,5 @@
-AddHandler wsgi-script .wsgi
+Options +FollowSymLinks
+AddHandler wsgi-script .py
 RewriteEngine On
 
 # Force HTTPS
@@ -10,11 +11,26 @@ RewriteCond %{REQUEST_FILENAME} !-f
 RewriteCond %{REQUEST_FILENAME} !-d
 RewriteRule ^(.*)$ /index.html [L]
 
-# Handle API routes
-RewriteRule ^api/(.*)$ app_wsgi.py/$1 [QSA,L]
-
-# Set Python path
+# Set Python path and version
 SetEnv PYTHONPATH /home/ddiemeo9zafc/mapcontacts
+SetEnv FLASK_APP app.py
+SetEnv FLASK_ENV production
+SetEnv PYTHON_VERSION 3.7
+
+# Handle API routes
+RewriteRule ^api/(.*)$ /app_wsgi.py/$1 [QSA,L]
+
+# Allow access to all files
+<Files *>
+    Order Allow,Deny
+    Allow from all
+</Files>
+
+# Allow access to Python files
+<FilesMatch "\.(py|wsgi)$">
+    Order Allow,Deny
+    Allow from all
+</FilesMatch>
 
 # Security headers
 Header set X-Content-Type-Options "nosniff"

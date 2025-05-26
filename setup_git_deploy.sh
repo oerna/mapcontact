@@ -36,9 +36,9 @@ do
         mkdir -p $TARGET/instance
         mkdir -p $TARGET/public
 
-        # Install dependencies using system Python 3.6
+        # Install dependencies using Python 3.7
         echo "Installing dependencies..."
-        python3.6 -m pip install --user -r requirements.txt
+        python3.7 -m pip install --user -r requirements.txt
 
         # Set permissions
         chmod -R 755 $TARGET
@@ -52,9 +52,12 @@ do
             ln -sf $TARGET/static $TARGET/public/static
         fi
 
+        # Copy .htaccess files
+        cp $TARGET/.htaccess $TARGET/public/.htaccess
+
         # Initialize database
         echo "Initializing database..."
-        python3.6 migrate_db.py
+        python3.7 migrate_db.py
 
         # Restart application
         touch app_wsgi.py
