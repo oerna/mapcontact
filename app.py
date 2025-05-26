@@ -11,6 +11,7 @@ import csv
 import io
 import logging
 from werkzeug.utils import secure_filename
+import traceback
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -23,21 +24,21 @@ if not os.path.exists(instance_path):
 
 app = Flask(__name__, static_folder='static', static_url_path='')
 app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'mapcontacts-secure-key-2024')
-app.config['SESSION_COOKIE_SECURE'] = os.environ.get('FLASK_ENV') == 'production'
+app.config['SESSION_COOKIE_SECURE'] = os.environ.get('FLASK_ENV') == 'production'  # Only use secure cookies in production
 app.config['SESSION_COOKIE_HTTPONLY'] = True
 app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
 app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(seconds=int(os.environ.get('PERMANENT_SESSION_LIFETIME', '86400')))
-app.config['SESSION_COOKIE_DOMAIN'] = 'contactbook.oerna.de' if os.environ.get('FLASK_ENV') == 'production' else None
+app.config['SESSION_COOKIE_DOMAIN'] = None  # Don't set domain in development
 
 # Configure CORS
 CORS(app, 
      supports_credentials=True,
      resources={
          r"/*": {
-             "origins": ["https://contactbook.oerna.de"],
+             "origins": ["https://contactbook.oerna.de", "http://contactbook.oerna.de", "http://localhost:8000", "http://127.0.0.1:8000"],
              "methods": ["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],
-             "allow_headers": ["Content-Type", "Authorization"],
-             "expose_headers": ["Content-Type", "Authorization"],
+             "allow_headers": ["Content-Type", "Authorization", "Accept", "X-Requested-With"],
+             "expose_headers": ["Content-Type", "Authorization", "Set-Cookie"],
              "supports_credentials": True,
              "max_age": 3600
          }
@@ -51,7 +52,7 @@ login_manager.session_protection = 'strong'
 
 # Database configuration
 try:
-    if os.environ.get('DATABASE_URL'):
+    if os.environ.get('FLASK_ENV') == 'production' and os.environ.get('DATABASE_URL'):
         # Production database (MySQL)
         database_url = os.environ.get('DATABASE_URL')
         app.config['SQLALCHEMY_DATABASE_URI'] = database_url
@@ -137,11 +138,14 @@ with app.app_context():
 @app.route('/login', methods=['POST'])
 def login():
     try:
+        logger.info("Login attempt received")
         if not request.is_json:
             logger.warning("Login attempt with non-JSON data")
             return jsonify({'error': 'Request must be JSON'}), 400
             
         data = request.get_json()
+        logger.info(f"Login attempt for username: {data.get('username', 'not provided')}")
+        
         if not data or 'username' not in data or 'password' not in data:
             logger.warning("Login attempt with missing credentials")
             return jsonify({'error': 'Missing username or password'}), 400
@@ -157,11 +161,20 @@ def login():
             
         login_user(user, remember=True)
         session.permanent = True
-        logger.info(f"Successful login for user: {data['username']}")
-        return jsonify({'message': 'Logged in successfully'})
+        
+        # Log session details
+        logger.info(f"Session created - ID: {session.sid}, User: {data['username']}")
+        logger.info(f"Session cookie settings: secure={app.config['SESSION_COOKIE_SECURE']}, "
+                   f"httponly={app.config['SESSION_COOKIE_HTTPONLY']}, "
+                   f"samesite={app.config['SESSION_COOKIE_SAMESITE']}, "
+                   f"domain={app.config['SESSION_COOKIE_DOMAIN']}")
+        
+        response = jsonify({'message': 'Logged in successfully'})
+        return response
     except Exception as e:
         logger.error(f"Login error: {str(e)}")
-        return jsonify({'error': 'An error occurred during login'}), 500
+        logger.error(f"Error details: {traceback.format_exc()}")
+        return jsonify({'error': 'An error occurred during login. Please try again later.'}), 500
 
 @app.route('/logout')
 @login_required

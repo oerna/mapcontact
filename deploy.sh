@@ -1,26 +1,62 @@
 #!/bin/bash
 
-# Configuration
-REMOTE_USER="ddiemeo9zafc"
-REMOTE_HOST="contactbook.oerna.de"
-REMOTE_DIR="~/mapcontacts"
+# Exit on any error
+set -e
 
-# Create a temporary directory for deployment
-TEMP_DIR=$(mktemp -d)
-echo "Creating temporary directory: $TEMP_DIR"
+# Log file setup
+LOG_FILE="deploy.log"
+exec 1> >(tee -a "$LOG_FILE")
+exec 2> >(tee -a "$LOG_FILE" >&2)
 
-# Copy files to temporary directory, excluding unnecessary files
-echo "Preparing files for deployment..."
-cp -r app.py wsgi.py passenger_wsgi.py requirements.txt setup.py .python-version install_packages.sh static $TEMP_DIR/
-cp -r .htaccess $TEMP_DIR/
+echo "=== Starting deployment at $(date) ==="
 
-# Sync files to server
-echo "Deploying files to server..."
-scp -r $TEMP_DIR/* $REMOTE_USER@$REMOTE_HOST:$REMOTE_DIR/
+# Function to log messages
+log() {
+    echo "[$(date '+%Y-%m-%d %H:%M:%S')] $1"
+}
 
-# Clean up
-echo "Cleaning up..."
-rm -rf $TEMP_DIR
+# Function to check command status
+check_status() {
+    if [ $? -eq 0 ]; then
+        log "✓ $1"
+    else
+        log "✗ $1"
+        exit 1
+    fi
+}
 
-echo "Deployment completed!"
-echo "Please run the installation script on the server using the DomainFactory control panel." 
+# 1. Environment Setup
+log "Setting up Python environment..."
+python3 -m venv venv
+source venv/bin/activate
+check_status "Virtual environment created"
+
+# 2. Install Dependencies
+log "Installing dependencies..."
+pip install --upgrade pip
+pip install -r requirements.txt
+check_status "Dependencies installed"
+
+# 3. Create Required Directories
+log "Creating required directories..."
+mkdir -p logs instance
+chmod 755 logs instance
+check_status "Directories created"
+
+# 4. Database Setup
+log "Setting up database..."
+python3 migrate_db.py
+check_status "Database setup completed"
+
+# 5. Test Application
+log "Testing application..."
+python3 -c "from app import app; print('Application loaded successfully')"
+check_status "Application test passed"
+
+# 6. Set Permissions
+log "Setting permissions..."
+chmod -R 755 .
+check_status "Permissions set"
+
+echo "=== Deployment completed successfully at $(date) ==="
+echo "Please check $LOG_FILE for detailed logs" 

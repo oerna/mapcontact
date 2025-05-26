@@ -24,10 +24,16 @@ ssh $REMOTE_USER@$REMOTE_HOST << EOF
 
     # Create database tables
     DATABASE_URL="$MYSQL_URL" $VENV_PATH/bin/python3 - <<PYTHON
-from app import db, app
+from app import db, app, User
 with app.app_context():
     db.create_all()
-    print('Database tables created successfully')
+    # Create admin user if it doesn't exist
+    if not User.query.filter_by(username='admin').first():
+        admin = User(username='admin')
+        admin.set_password('admin123')
+        db.session.add(admin)
+        db.session.commit()
+    print('Database tables and admin user created successfully')
 PYTHON
 
     # Run migration script
