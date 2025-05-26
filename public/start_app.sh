@@ -4,6 +4,7 @@
 export PYTHONPATH=/home/ddiemeo9zafc/mapcontacts
 export FLASK_APP=app.py
 export FLASK_ENV=production
+export PATH="/home/ddiemeo9zafc/.local/bin:$PATH"
 
 # Change to application directory
 cd /home/ddiemeo9zafc/mapcontacts
@@ -18,8 +19,15 @@ if [ -f app.pid ]; then
     rm app.pid
 fi
 
-# Start Gunicorn
-exec gunicorn \
+# Log the environment
+echo "Python version: $(python3 --version)"
+echo "Gunicorn path: $(which gunicorn)"
+echo "PYTHONPATH: $PYTHONPATH"
+echo "Current directory: $(pwd)"
+echo "Files in current directory: $(ls -la)"
+
+# Start Gunicorn using the full path
+/home/ddiemeo9zafc/.local/bin/gunicorn \
     --bind 127.0.0.1:8000 \
     --workers 1 \
     --timeout 120 \

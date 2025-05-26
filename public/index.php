@@ -20,6 +20,7 @@ function log_message($message) {
 putenv('PYTHONPATH=/home/ddiemeo9zafc/mapcontacts');
 putenv('FLASK_APP=app.py');
 putenv('FLASK_ENV=production');
+putenv('PATH=/home/ddiemeo9zafc/.local/bin:' . getenv('PATH'));
 
 // Function to check if a process is running
 function is_process_running($pid) {
@@ -29,12 +30,12 @@ function is_process_running($pid) {
 
 // Function to check if Gunicorn is available
 function check_gunicorn() {
-    exec('which gunicorn', $output, $return_var);
+    exec('/home/ddiemeo9zafc/.local/bin/gunicorn --version', $output, $return_var);
     if ($return_var !== 0) {
-        log_message("Gunicorn not found in PATH");
+        log_message("Gunicorn not found at /home/ddiemeo9zafc/.local/bin/gunicorn");
         return false;
     }
-    log_message("Gunicorn found at: " . $output[0]);
+    log_message("Gunicorn found: " . implode("\n", $output));
     return true;
 }
 
