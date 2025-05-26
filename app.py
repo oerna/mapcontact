@@ -14,6 +14,8 @@ from logging.handlers import RotatingFileHandler
 from werkzeug.utils import secure_filename
 import traceback
 import sys
+import signal
+import atexit
 
 # Configure logging
 log_dir = os.path.join(os.path.dirname(__file__), 'logs')
@@ -497,12 +499,42 @@ def not_found_error(error):
     log_error(error_msg)
     return "The requested resource was not found.", 404
 
+def cleanup():
+    """Cleanup function to be called on exit"""
+    log_error("Application shutting down...")
+    try:
+        # Remove PID file if it exists
+        pid_file = os.path.join(os.path.dirname(__file__), 'app.pid')
+        if os.path.exists(pid_file):
+            os.remove(pid_file)
+    except Exception as e:
+        log_error(f"Error during cleanup: {str(e)}")
+
+def signal_handler(signum, frame):
+    """Handle termination signals"""
+    log_error(f"Received signal {signum}")
+    cleanup()
+    sys.exit(0)
+
 if __name__ == '__main__':
     try:
+        # Register signal handlers
+        signal.signal(signal.SIGTERM, signal_handler)
+        signal.signal(signal.SIGINT, signal_handler)
+        
+        # Register cleanup function
+        atexit.register(cleanup)
+        
+        # Write PID file
+        pid_file = os.path.join(os.path.dirname(__file__), 'app.pid')
+        with open(pid_file, 'w') as f:
+            f.write(str(os.getpid()))
+        
         port = int(os.environ.get('PORT', 8000))
         log_error(f"Starting Flask application on port {port}")
         app.run(host='127.0.0.1', port=port, debug=False)  # Only listen on localhost
     except Exception as e:
         error_msg = f"Failed to start Flask application: {str(e)}\n{traceback.format_exc()}"
         log_error(error_msg)
+        cleanup()
         raise 

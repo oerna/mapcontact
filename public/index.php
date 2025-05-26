@@ -10,28 +10,68 @@ $port = 8000;
 $pid_file = '/home/ddiemeo9zafc/mapcontacts/app.pid';
 $log_file = '/home/ddiemeo9zafc/mapcontacts/public/app.log';
 
+// Function to log messages
+function log_message($message) {
+    error_log(date('[Y-m-d H:i:s] ') . $message . "\n", 3, '/home/ddiemeo9zafc/mapcontacts/public/php_error.log');
+}
+
 // Set environment variables
 putenv('PYTHONPATH=/home/ddiemeo9zafc/mapcontacts');
 putenv('FLASK_APP=app.py');
 putenv('FLASK_ENV=production');
 
-// Start the Python application if it's not running
-if (!file_exists($pid_file)) {
-    // Start the application with logging
-    $command = "cd /home/ddiemeo9zafc/mapcontacts && python3 app.py > $log_file 2>&1 & echo $! > $pid_file";
-    exec($command);
-    // Wait a moment for the application to start
-    sleep(2);
+// Function to check if a process is running
+function is_process_running($pid) {
+    if (!$pid) return false;
+    return file_exists("/proc/$pid");
 }
 
-// Check if the application is running
-$pid = file_exists($pid_file) ? file_get_contents($pid_file) : null;
-if ($pid && !file_exists("/proc/$pid")) {
-    // Process is not running, remove PID file and try to start again
-    unlink($pid_file);
-    $command = "cd /home/ddiemeo9zafc/mapcontacts && python3 app.py > $log_file 2>&1 & echo $! > $pid_file";
+// Function to start the Flask application
+function start_flask_app() {
+    global $python_app, $pid_file, $log_file;
+    
+    // Kill any existing process
+    if (file_exists($pid_file)) {
+        $old_pid = file_get_contents($pid_file);
+        if (is_process_running($old_pid)) {
+            exec("kill $old_pid");
+            sleep(1);
+        }
+        unlink($pid_file);
+    }
+    
+    // Start the application with logging
+    $command = "cd /home/ddiemeo9zafc/mapcontacts && nohup python3 app.py > $log_file 2>&1 & echo $! > $pid_file";
     exec($command);
-    sleep(2);
+    log_message("Started Flask application with command: $command");
+    
+    // Wait for the application to start
+    $max_attempts = 10;
+    $attempt = 0;
+    while ($attempt < $max_attempts) {
+        if (file_exists($pid_file)) {
+            $pid = file_get_contents($pid_file);
+            if (is_process_running($pid)) {
+                log_message("Flask application started successfully with PID: $pid");
+                return true;
+            }
+        }
+        sleep(1);
+        $attempt++;
+    }
+    
+    log_message("Failed to start Flask application after $max_attempts attempts");
+    return false;
+}
+
+// Start or restart the Flask application if needed
+if (!file_exists($pid_file) || !is_process_running(file_get_contents($pid_file))) {
+    log_message("Flask application not running, starting it...");
+    if (!start_flask_app()) {
+        header('HTTP/1.1 500 Internal Server Error');
+        echo "Failed to start the application. Please check the error logs.";
+        exit;
+    }
 }
 
 // Forward the request to the Python application
@@ -41,7 +81,8 @@ curl_setopt($ch, CURLOPT_URL, $url);
 curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
 curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
 curl_setopt($ch, CURLOPT_HEADER, true);
-curl_setopt($ch, CURLOPT_TIMEOUT, 10); // Add timeout
+curl_setopt($ch, CURLOPT_TIMEOUT, 10);
+curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 5);
 
 // Forward the request method
 curl_setopt($ch, CURLOPT_CUSTOMREQUEST, $_SERVER['REQUEST_METHOD']);
@@ -68,7 +109,19 @@ $http_code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
 
 // Log any curl errors
 if ($response === false) {
-    error_log("Curl error: " . curl_error($ch));
+    $error = curl_error($ch);
+    log_message("Curl error: $error");
+    
+    // If connection failed, try restarting the Flask application
+    if (strpos($error, 'Connection refused') !== false) {
+        log_message("Connection refused, attempting to restart Flask application...");
+        if (start_flask_app()) {
+            // Retry the request
+            $response = curl_exec($ch);
+            $header_size = curl_getinfo($ch, CURLINFO_HEADER_SIZE);
+            $http_code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        }
+    }
 }
 
 // Close the connection
