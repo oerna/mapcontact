@@ -1,6 +1,7 @@
 import os
 import sys
 import logging
+import traceback
 from logging.handlers import RotatingFileHandler
 
 # Configure logging
@@ -9,7 +10,7 @@ if not os.path.exists(log_dir):
     os.makedirs(log_dir, mode=0o755)
 
 logging.basicConfig(
-    level=logging.INFO,
+    level=logging.DEBUG,  # Changed to DEBUG for more verbose logging
     format='%(asctime)s %(levelname)s %(message)s',
     handlers=[
         RotatingFileHandler(
@@ -27,9 +28,15 @@ app_dir = os.path.dirname(os.path.abspath(__file__))
 if app_dir not in sys.path:
     sys.path.insert(0, app_dir)
 
+logger.debug(f"Application directory: {app_dir}")
+logger.debug(f"Python path: {sys.path}")
+logger.debug(f"Current working directory: {os.getcwd()}")
+logger.debug(f"Files in current directory: {os.listdir('.')}")
+
 # Set environment variables
 os.environ['FLASK_ENV'] = 'production'
 os.environ['FLASK_APP'] = os.path.join(app_dir, 'app.py')
+logger.debug(f"FLASK_APP set to: {os.environ['FLASK_APP']}")
 
 try:
     # Import the Flask application
@@ -39,6 +46,7 @@ try:
     logger.info(f"Python path: {sys.path}")
 except Exception as e:
     logger.error(f"Error importing Flask application: {str(e)}")
+    logger.error(f"Error traceback: {traceback.format_exc()}")
     logger.error(f"Current directory: {os.getcwd()}")
     logger.error(f"Files in current directory: {os.listdir('.')}")
     raise
@@ -47,6 +55,7 @@ except Exception as e:
 @application.errorhandler(500)
 def internal_error(error):
     logger.error(f"500 error occurred: {str(error)}")
+    logger.error(f"Error traceback: {traceback.format_exc()}")
     return "We're sorry, but something went wrong. The issue has been logged for investigation.", 500
 
 @application.errorhandler(404)
