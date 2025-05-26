@@ -16,18 +16,19 @@ log "=== Starting Flask application ==="
 log "Current time: $(date)"
 log "Current user: $(whoami)"
 log "Current directory: $(pwd)"
-log "Python version: $(python3 --version)"
-log "PATH: $PATH"
+
+# Activate virtual environment
+source /home/ddiemeo9zafc/virtualenv/mapcontacts/3.6/bin/activate
 
 # Set up environment
 export PYTHONPATH="/home/ddiemeo9zafc/mapcontacts"
 export FLASK_APP="/home/ddiemeo9zafc/mapcontacts/app.py"
 export FLASK_ENV="production"
-export PATH="/home/ddiemeo9zafc/.local/bin:$PATH"
 export PYTHONUNBUFFERED=1
 
 # Verify Python environment
 log "Python executable: $(which python3)"
+log "Python version: $(python3 --version)"
 log "PYTHONPATH: $PYTHONPATH"
 log "FLASK_APP: $FLASK_APP"
 
@@ -38,9 +39,23 @@ cd /home/ddiemeo9zafc/mapcontacts
 log "Directory contents:"
 ls -la >> "$LOG_FILE" 2>&1
 
+# Verify Gunicorn installation
+if ! command -v gunicorn &> /dev/null; then
+    log "ERROR: Gunicorn not found in virtual environment"
+    exit 1
+fi
+
+# Verify Python packages
+log "Checking Python packages..."
+python3 -c "import flask; import flask_sqlalchemy; import flask_login; import flask_cors; import geopy; import gunicorn" >> "$LOG_FILE" 2>&1
+if [ $? -ne 0 ]; then
+    log "ERROR: Required Python packages not found"
+    exit 1
+fi
+
 # Start Gunicorn with detailed error logging
 log "Starting Gunicorn..."
-exec /home/ddiemeo9zafc/.local/bin/gunicorn \
+exec gunicorn \
     --bind 127.0.0.1:8000 \
     --workers 2 \
     --timeout 120 \

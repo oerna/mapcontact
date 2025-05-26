@@ -39,7 +39,7 @@ function check_gunicorn() {
 
 // Function to start the Flask application
 function start_flask_app() {
-    global $app_dir, $pid_file, $app_log;
+    global $app_dir, $pid_file, $app_log, $port;
     
     // Check if Gunicorn is available
     if (!check_gunicorn()) {
@@ -51,8 +51,8 @@ function start_flask_app() {
     $start_script = __DIR__ . '/start_app.sh';
     chmod($start_script, 0755);
     
-    // Start the application
-    $command = "cd $app_dir && nohup $start_script > $app_log 2>&1 & echo $! > $pid_file";
+    // Start the application using virtual environment
+    $command = "cd $app_dir && source /home/ddiemeo9zafc/virtualenv/mapcontacts/3.6/bin/activate && gunicorn --bind 127.0.0.1:$port --workers 2 --timeout 120 --access-logfile $app_log --error-logfile $app_log --log-level debug --capture-output --enable-stdio-inheritance --preload app:app > $app_log 2>&1 & echo $! > $pid_file";
     log_message("Started Flask application with command: $command");
     
     exec($command, $output, $return_var);
@@ -124,11 +124,15 @@ if (!$pid || !is_process_running($pid)) {
 // Forward the request to the Flask application
 $ch = curl_init();
 $url = "http://127.0.0.1:$port" . $_SERVER['REQUEST_URI'];
+log_message("Forwarding request to: $url");
+log_message("Request method: " . $_SERVER['REQUEST_METHOD']);
+
 curl_setopt($ch, CURLOPT_URL, $url);
 curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
 curl_setopt($ch, CURLOPT_HEADER, true);
 curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
-curl_setopt($ch, CURLOPT_TIMEOUT, 30);
+curl_setopt($ch, CURLOPT_TIMEOUT, 5); // Reduced timeout to 5 seconds
+curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 2); // Added connection timeout
 
 // Forward the request method
 curl_setopt($ch, CURLOPT_CUSTOMREQUEST, $_SERVER['REQUEST_METHOD']);
@@ -141,11 +145,13 @@ foreach (getallheaders() as $name => $value) {
     }
 }
 curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
+log_message("Forwarding headers: " . implode(", ", $headers));
 
 // Forward request body
 if ($_SERVER['REQUEST_METHOD'] === 'POST' || $_SERVER['REQUEST_METHOD'] === 'PUT') {
     $input = file_get_contents('php://input');
     curl_setopt($ch, CURLOPT_POSTFIELDS, $input);
+    log_message("Request body: " . substr($input, 0, 1000)); // Log first 1000 chars of body
 }
 
 // Execute the request
@@ -154,11 +160,16 @@ $header_size = curl_getinfo($ch, CURLINFO_HEADER_SIZE);
 $http_code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
 
 if ($response === false) {
-    log_message("Curl error: " . curl_error($ch));
+    $error = curl_error($ch);
+    log_message("Curl error: " . $error);
+    log_message("Curl info: " . print_r(curl_getinfo($ch), true));
     header("HTTP/1.1 500 Internal Server Error");
-    echo "Failed to forward request to the application.";
+    echo "Failed to forward request to the application. Error: " . $error;
     exit;
 }
+
+log_message("Response code: " . $http_code);
+log_message("Response headers size: " . $header_size);
 
 // Forward the response
 $headers = substr($response, 0, $header_size);
