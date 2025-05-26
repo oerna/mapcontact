@@ -1,5 +1,5 @@
 Options +FollowSymLinks +ExecCGI +MultiViews
-AddHandler wsgi-script .py
+AddHandler wsgi-script .wsgi
 RewriteEngine On
 
 # Force HTTPS
@@ -11,6 +11,9 @@ SetEnv PYTHONPATH /home/ddiemeo9zafc/mapcontacts
 SetEnv FLASK_APP app.py
 SetEnv FLASK_ENV production
 SetEnv PYTHON_VERSION 3.6
+
+# Test WSGI handler
+RewriteRule ^test$ test.wsgi [L]
 
 # Handle static files
 RewriteCond %{REQUEST_FILENAME} -f
@@ -31,7 +34,7 @@ RewriteRule ^(.*)$ app_wsgi.py/$1 [QSA,L]
     Require all granted
 </Files>
 
-# Allow access to Python files
+# Allow access to Python and WSGI files
 <FilesMatch "\.(py|wsgi)$">
     Order Allow,Deny
     Allow from all
