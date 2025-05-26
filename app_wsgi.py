@@ -22,12 +22,10 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-# Add virtual environment site-packages to Python path
-venv_path = os.path.join(os.path.dirname(__file__), 'venv')
-if os.path.exists(venv_path):
-    site_packages = os.path.join(venv_path, 'lib', 'python3.6', 'site-packages')
-    if os.path.exists(site_packages):
-        sys.path.insert(0, site_packages)
+# Add application directory to Python path
+app_dir = os.path.dirname(os.path.abspath(__file__))
+if app_dir not in sys.path:
+    sys.path.insert(0, app_dir)
 
 # Set environment variables
 os.environ['FLASK_ENV'] = 'production'

@@ -1,50 +1,35 @@
-Options +FollowSymLinks +ExecCGI +MultiViews
-AddHandler wsgi-script .wsgi
+Options +FollowSymLinks +ExecCGI
+AddHandler wsgi-script .py
 RewriteEngine On
 
 # Force HTTPS
 RewriteCond %{HTTPS} off
 RewriteRule ^(.*)$ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
 
-# Set Python path and version
+# Set Python path
 SetEnv PYTHONPATH /home/ddiemeo9zafc/mapcontacts
-SetEnv FLASK_APP app.py
-SetEnv FLASK_ENV production
-SetEnv PYTHON_VERSION 3.6
-
-# Test WSGI handler
-RewriteRule ^test$ test.wsgi [L]
 
 # Handle static files
 RewriteCond %{REQUEST_FILENAME} -f
 RewriteRule ^ - [L]
 
-# Handle API routes
-RewriteRule ^api/(.*)$ app_wsgi.py/$1 [QSA,L]
-
-# Handle frontend routes
+# Handle all other requests through WSGI
 RewriteCond %{REQUEST_FILENAME} !-f
 RewriteCond %{REQUEST_FILENAME} !-d
-RewriteRule ^(.*)$ app_wsgi.py/$1 [QSA,L]
+RewriteRule ^(.*)$ /home/ddiemeo9zafc/mapcontacts/app_wsgi.py/$1 [QSA,L]
 
 # Allow access to all files
 <Files *>
-    Order Allow,Deny
-    Allow from all
     Require all granted
 </Files>
 
-# Allow access to Python and WSGI files
-<FilesMatch "\.(py|wsgi)$">
-    Order Allow,Deny
-    Allow from all
+# Allow access to Python files
+<FilesMatch "\.py$">
     Require all granted
 </FilesMatch>
 
 # Allow access to static files
 <FilesMatch "\.(css|js|jpg|jpeg|png|gif|ico|svg|woff|woff2|ttf|eot|html)$">
-    Order Allow,Deny
-    Allow from all
     Require all granted
 </FilesMatch>
 
