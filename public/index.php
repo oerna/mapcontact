@@ -1,26 +1,22 @@
 <?php
 // Enable error logging
 ini_set('display_errors', 1);
-ini_set('log_errors', 1);
-ini_set('error_log', '/home/ddiemeo9zafc/mapcontacts/public/php_error.log');
+ini_set('display_startup_errors', 1);
+error_reporting(E_ALL);
 
-// Set the path to the Python application
-$python_app = '/home/ddiemeo9zafc/mapcontacts/app.py';
-$port = 8000;
-$pid_file = '/home/ddiemeo9zafc/mapcontacts/app.pid';
-$log_file = '/home/ddiemeo9zafc/mapcontacts/public/app.log';
-$start_script = '/home/ddiemeo9zafc/mapcontacts/public/start_app.sh';
-
-// Function to log messages
+// Set up logging
+$log_file = __DIR__ . '/php_error.log';
 function log_message($message) {
-    error_log(date('[Y-m-d H:i:s] ') . $message . "\n", 3, '/home/ddiemeo9zafc/mapcontacts/public/php_error.log');
+    global $log_file;
+    $timestamp = date('Y-m-d H:i:s');
+    file_put_contents($log_file, "[$timestamp] $message\n", FILE_APPEND);
 }
 
-// Set environment variables
-putenv('PYTHONPATH=/home/ddiemeo9zafc/mapcontacts');
-putenv('FLASK_APP=app.py');
-putenv('FLASK_ENV=production');
-putenv('PATH=/home/ddiemeo9zafc/.local/bin:' . getenv('PATH'));
+// Set up environment
+$app_dir = '/home/ddiemeo9zafc/mapcontacts';
+$port = 8000;
+$pid_file = $app_dir . '/app.pid';
+$app_log = __DIR__ . '/app.log';
 
 // Function to check if a process is running
 function is_process_running($pid) {
@@ -30,177 +26,146 @@ function is_process_running($pid) {
 
 // Function to check if Gunicorn is available
 function check_gunicorn() {
-    exec('/home/ddiemeo9zafc/.local/bin/gunicorn --version', $output, $return_var);
-    if ($return_var !== 0) {
-        log_message("Gunicorn not found at /home/ddiemeo9zafc/.local/bin/gunicorn");
-        return false;
+    exec('which gunicorn', $output, $return_var);
+    if ($return_var === 0) {
+        exec('gunicorn --version', $version);
+        log_message("Gunicorn found: " . implode("\n", $version));
+        return true;
     }
-    log_message("Gunicorn found: " . implode("\n", $output));
-    return true;
+    log_message("Gunicorn not found in PATH");
+    return false;
 }
 
 // Function to start the Flask application
 function start_flask_app() {
-    global $start_script, $pid_file, $log_file;
+    global $app_dir, $pid_file, $app_log;
     
     // Check if Gunicorn is available
     if (!check_gunicorn()) {
-        log_message("Gunicorn is not available. Please install it using: pip install gunicorn");
+        log_message("Cannot start Flask application: Gunicorn not found");
         return false;
     }
     
-    // Check if start script exists and is executable
-    if (!is_executable($start_script)) {
-        log_message("Making start script executable...");
-        chmod($start_script, 0755);
-    }
+    // Make sure the start script is executable
+    $start_script = __DIR__ . '/start_app.sh';
+    chmod($start_script, 0755);
     
-    // Start the application using the shell script
-    $command = "nohup $start_script > $log_file 2>&1 & echo $! > $pid_file";
-    exec($command, $output, $return_var);
+    // Start the application
+    $command = "nohup $start_script > $app_log 2>&1 & echo $! > $pid_file";
     log_message("Started Flask application with command: $command");
+    
+    exec($command, $output, $return_var);
     log_message("Command output: " . implode("\n", $output));
     log_message("Return value: $return_var");
     
-    // Check if the PID file was created
-    if (!file_exists($pid_file)) {
-        log_message("PID file was not created");
-        if (file_exists($log_file)) {
-            log_message("Application log contents:");
-            log_message(file_get_contents($log_file));
-        }
+    if ($return_var !== 0) {
+        log_message("Failed to start Flask application");
         return false;
     }
     
     // Wait for the application to start
     $max_attempts = 10;
     $attempt = 0;
+    $started = false;
+    
     while ($attempt < $max_attempts) {
-        if (file_exists($pid_file)) {
-            $pid = file_get_contents($pid_file);
-            log_message("Checking process with PID: $pid");
-            
-            if (is_process_running($pid)) {
-                // Check if the application is responding
-                $ch = curl_init("http://127.0.0.1:8000/");
-                curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-                curl_setopt($ch, CURLOPT_TIMEOUT, 2);
-                $response = curl_exec($ch);
-                $http_code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-                $error = curl_error($ch);
-                curl_close($ch);
-                
-                log_message("HTTP response code: $http_code");
-                if ($error) {
-                    log_message("Curl error: $error");
-                }
-                
-                if ($http_code > 0) {
-                    log_message("Flask application started successfully with PID: $pid");
-                    return true;
-                }
-            } else {
-                log_message("Process $pid is not running");
-                // Check if the process crashed
-                if (file_exists($log_file)) {
-                    log_message("Application log contents after crash:");
-                    log_message(file_get_contents($log_file));
-                }
-            }
-        } else {
-            log_message("PID file does not exist");
+        $pid = file_exists($pid_file) ? file_get_contents($pid_file) : null;
+        log_message("Checking process with PID: $pid");
+        
+        if ($pid && is_process_running($pid)) {
+            $started = true;
+            break;
         }
-        sleep(1);
+        
+        log_message("Process $pid is not running");
+        if (file_exists($app_log)) {
+            log_message("Application log contents after crash:");
+            log_message(file_get_contents($app_log));
+        }
+        
         $attempt++;
+        sleep(1);
     }
     
-    // If we get here, the application failed to start
-    log_message("Failed to start Flask application after $max_attempts attempts");
-    if (file_exists($log_file)) {
-        log_message("Application log contents:");
-        log_message(file_get_contents($log_file));
+    if (!$started) {
+        log_message("Failed to start Flask application after $max_attempts attempts");
+        if (file_exists($app_log)) {
+            log_message("Application log contents:");
+            log_message(file_get_contents($app_log));
+        }
+        return false;
     }
-    return false;
+    
+    return true;
 }
 
-// Start or restart the Flask application if needed
-if (!file_exists($pid_file) || !is_process_running(file_get_contents($pid_file))) {
+// Check if the application is running
+$pid = file_exists($pid_file) ? file_get_contents($pid_file) : null;
+if (!$pid || !is_process_running($pid)) {
     log_message("Flask application not running, starting it...");
     if (!start_flask_app()) {
-        header('HTTP/1.1 500 Internal Server Error');
-        echo "Failed to start the application. Please check the error logs at /php_error.log and /app.log";
+        header("HTTP/1.1 500 Internal Server Error");
+        echo "Failed to start the application. Please check the logs for details.";
         exit;
     }
 }
 
-// Forward the request to the Python application
+// Forward the request to the Flask application
 $ch = curl_init();
-$url = "http://localhost:$port" . $_SERVER['REQUEST_URI'];
+$url = "http://127.0.0.1:$port" . $_SERVER['REQUEST_URI'];
 curl_setopt($ch, CURLOPT_URL, $url);
 curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
 curl_setopt($ch, CURLOPT_HEADER, true);
-curl_setopt($ch, CURLOPT_TIMEOUT, 10);
-curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 5);
+curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
+curl_setopt($ch, CURLOPT_TIMEOUT, 30);
 
 // Forward the request method
 curl_setopt($ch, CURLOPT_CUSTOMREQUEST, $_SERVER['REQUEST_METHOD']);
 
 // Forward headers
-$headers = getallheaders();
-$curl_headers = [];
-foreach ($headers as $key => $value) {
-    if ($key != 'Host') {
-        $curl_headers[] = "$key: $value";
+$headers = [];
+foreach (getallheaders() as $name => $value) {
+    if (strtolower($name) !== 'host') {
+        $headers[] = "$name: $value";
     }
 }
-curl_setopt($ch, CURLOPT_HTTPHEADER, $curl_headers);
+curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
 
-// Forward POST data
-if ($_SERVER['REQUEST_METHOD'] == 'POST') {
-    curl_setopt($ch, CURLOPT_POSTFIELDS, file_get_contents('php://input'));
+// Forward request body
+if ($_SERVER['REQUEST_METHOD'] === 'POST' || $_SERVER['REQUEST_METHOD'] === 'PUT') {
+    $input = file_get_contents('php://input');
+    curl_setopt($ch, CURLOPT_POSTFIELDS, $input);
 }
 
-// Get the response
+// Execute the request
 $response = curl_exec($ch);
 $header_size = curl_getinfo($ch, CURLINFO_HEADER_SIZE);
 $http_code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
 
-// Log any curl errors
 if ($response === false) {
-    $error = curl_error($ch);
-    log_message("Curl error: $error");
-    
-    // If connection failed, try restarting the Flask application
-    if (strpos($error, 'Connection refused') !== false) {
-        log_message("Connection refused, attempting to restart Flask application...");
-        if (start_flask_app()) {
-            // Retry the request
-            $response = curl_exec($ch);
-            $header_size = curl_getinfo($ch, CURLINFO_HEADER_SIZE);
-            $http_code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-        }
-    }
+    log_message("Curl error: " . curl_error($ch));
+    header("HTTP/1.1 500 Internal Server Error");
+    echo "Failed to forward request to the application.";
+    exit;
 }
 
-// Close the connection
-curl_close($ch);
-
-// Split response into headers and body
-$header = substr($response, 0, $header_size);
+// Forward the response
+$headers = substr($response, 0, $header_size);
 $body = substr($response, $header_size);
 
-// Forward headers
-$header_lines = explode("\n", $header);
+// Parse and forward headers
+$header_lines = explode("\n", $headers);
 foreach ($header_lines as $line) {
-    if (trim($line) != '') {
+    if (trim($line) !== '') {
         header($line);
     }
 }
 
-// Set the status code
+// Set the response code
 http_response_code($http_code);
 
-// Output the body
+// Output the response body
 echo $body;
+
+curl_close($ch);
 ?> 
