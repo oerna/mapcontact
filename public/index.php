@@ -9,6 +9,7 @@ $python_app = '/home/ddiemeo9zafc/mapcontacts/app.py';
 $port = 8000;
 $pid_file = '/home/ddiemeo9zafc/mapcontacts/app.pid';
 $log_file = '/home/ddiemeo9zafc/mapcontacts/public/app.log';
+$start_script = '/home/ddiemeo9zafc/mapcontacts/public/start_app.sh';
 
 // Function to log messages
 function log_message($message) {
@@ -39,7 +40,7 @@ function check_gunicorn() {
 
 // Function to start the Flask application
 function start_flask_app() {
-    global $python_app, $pid_file, $log_file;
+    global $start_script, $pid_file, $log_file;
     
     // Check if Gunicorn is available
     if (!check_gunicorn()) {
@@ -47,34 +48,14 @@ function start_flask_app() {
         return false;
     }
     
-    // Kill any existing process
-    if (file_exists($pid_file)) {
-        $old_pid = file_get_contents($pid_file);
-        if (is_process_running($old_pid)) {
-            exec("kill $old_pid");
-            sleep(1);
-        }
-        unlink($pid_file);
+    // Check if start script exists and is executable
+    if (!is_executable($start_script)) {
+        log_message("Making start script executable...");
+        chmod($start_script, 0755);
     }
     
-    // Check Python version and environment
-    exec('python3 --version', $python_version);
-    log_message("Python version: " . implode("\n", $python_version));
-    
-    // Check if the application directory exists and is accessible
-    if (!is_dir('/home/ddiemeo9zafc/mapcontacts')) {
-        log_message("Application directory does not exist or is not accessible");
-        return false;
-    }
-    
-    // Check if app.py exists and is readable
-    if (!is_readable('/home/ddiemeo9zafc/mapcontacts/app.py')) {
-        log_message("app.py does not exist or is not readable");
-        return false;
-    }
-    
-    // Start the application with Gunicorn
-    $command = "cd /home/ddiemeo9zafc/mapcontacts && nohup gunicorn --bind 127.0.0.1:8000 --workers 1 --timeout 120 --access-logfile $log_file --error-logfile $log_file --capture-output --log-level debug app:app > $log_file 2>&1 & echo $! > $pid_file";
+    // Start the application using the shell script
+    $command = "nohup $start_script > $log_file 2>&1 & echo $! > $pid_file";
     exec($command, $output, $return_var);
     log_message("Started Flask application with command: $command");
     log_message("Command output: " . implode("\n", $output));
