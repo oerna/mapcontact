@@ -1,4 +1,4 @@
-Options +FollowSymLinks +ExecCGI
+Options +FollowSymLinks +ExecCGI +MultiViews
 AddHandler wsgi-script .py
 RewriteEngine On
 
@@ -10,32 +10,38 @@ RewriteRule ^(.*)$ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
 SetEnv PYTHONPATH /home/ddiemeo9zafc/mapcontacts
 SetEnv FLASK_APP app.py
 SetEnv FLASK_ENV production
-SetEnv PYTHON_VERSION 3.7
+SetEnv PYTHON_VERSION 3.6
 
 # Handle static files
 RewriteCond %{REQUEST_FILENAME} -f
 RewriteRule ^ - [L]
 
 # Handle API routes
-RewriteRule ^api/(.*)$ /app_wsgi.py/$1 [QSA,L]
+RewriteRule ^api/(.*)$ app_wsgi.py/$1 [QSA,L]
 
 # Handle frontend routes
 RewriteCond %{REQUEST_FILENAME} !-f
 RewriteCond %{REQUEST_FILENAME} !-d
-RewriteRule ^(.*)$ /app_wsgi.py/$1 [QSA,L]
+RewriteRule ^(.*)$ app_wsgi.py/$1 [QSA,L]
 
 # Allow access to all files
 <Files *>
+    Order Allow,Deny
+    Allow from all
     Require all granted
 </Files>
 
 # Allow access to Python files
 <FilesMatch "\.(py|wsgi)$">
+    Order Allow,Deny
+    Allow from all
     Require all granted
 </FilesMatch>
 
 # Allow access to static files
 <FilesMatch "\.(css|js|jpg|jpeg|png|gif|ico|svg|woff|woff2|ttf|eot|html)$">
+    Order Allow,Deny
+    Allow from all
     Require all granted
 </FilesMatch>
 
@@ -43,4 +49,7 @@ RewriteRule ^(.*)$ /app_wsgi.py/$1 [QSA,L]
 Header set X-Content-Type-Options "nosniff"
 Header set X-Frame-Options "SAMEORIGIN"
 Header set X-XSS-Protection "1; mode=block"
-Header set Strict-Transport-Security "max-age=31536000; includeSubDomains" 
+Header set Strict-Transport-Security "max-age=31536000; includeSubDomains"
+
+# Enable directory browsing for debugging
+Options +Indexes 
