@@ -12,12 +12,16 @@ SetEnv FLASK_APP app.py
 SetEnv FLASK_ENV production
 SetEnv PYTHON_VERSION 3.6
 
+# Handle static files first
+RewriteCond %{REQUEST_URI} ^/static/
+RewriteCond %{REQUEST_FILENAME} -f
+RewriteRule ^(.*)$ - [L]
+
 # Handle API routes
 RewriteRule ^api/(.*)$ /passenger_wsgi.py/$1 [QSA,L]
 
-# Handle static files
-RewriteCond %{REQUEST_FILENAME} -f
-RewriteRule ^ - [L]
+# Handle root URL
+RewriteRule ^$ /passenger_wsgi.py/ [QSA,L]
 
 # Handle frontend routes
 RewriteCond %{REQUEST_FILENAME} !-f
@@ -48,6 +52,19 @@ PassengerPython /home/ddiemeo9zafc/virtualenv/mapcontacts/3.6/bin/python3.6
 PassengerAppRoot /home/ddiemeo9zafc/mapcontacts
 PassengerAppType wsgi
 PassengerStartupFile passenger_wsgi.py
+
+# Set default character set
+AddDefaultCharset UTF-8
+
+# Enable compression
+<IfModule mod_deflate.c>
+    AddOutputFilterByType DEFLATE text/html text/plain text/xml text/css text/javascript application/javascript application/json
+</IfModule>
+
+# Set cache control for static files
+<FilesMatch "\.(css|js|jpg|jpeg|png|gif|ico)$">
+    Header set Cache-Control "max-age=31536000, public"
+</FilesMatch>
 
 <Directory /home/ddiemeo9zafc/mapcontacts>
     Options -MultiViews

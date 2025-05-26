@@ -45,6 +45,14 @@ try:
     # Import the Flask application
     from app import app as application
     logger.info("Flask application imported successfully")
+    
+    # Ensure the application is in the correct context
+    with application.app_context():
+        logger.info("Application context initialized")
+        # Test database connection
+        from app import db
+        db.engine.connect()
+        logger.info("Database connection test successful")
 except Exception as e:
     logger.error(f"Error importing Flask application: {str(e)}")
     logger.error(f"Python version: {sys.version}")
