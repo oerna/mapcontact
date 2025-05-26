@@ -40,8 +40,8 @@ function start_flask_app() {
         unlink($pid_file);
     }
     
-    // Start the application with logging
-    $command = "cd /home/ddiemeo9zafc/mapcontacts && nohup python3 app.py > $log_file 2>&1 & echo $! > $pid_file";
+    // Start the application with Gunicorn
+    $command = "cd /home/ddiemeo9zafc/mapcontacts && nohup gunicorn --bind 127.0.0.1:8000 --workers 2 --timeout 120 --access-logfile $log_file --error-logfile $log_file app:app > $log_file 2>&1 & echo $! > $pid_file";
     exec($command);
     log_message("Started Flask application with command: $command");
     
@@ -52,8 +52,18 @@ function start_flask_app() {
         if (file_exists($pid_file)) {
             $pid = file_get_contents($pid_file);
             if (is_process_running($pid)) {
-                log_message("Flask application started successfully with PID: $pid");
-                return true;
+                // Check if the application is responding
+                $ch = curl_init("http://127.0.0.1:8000/");
+                curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+                curl_setopt($ch, CURLOPT_TIMEOUT, 2);
+                $response = curl_exec($ch);
+                $http_code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+                curl_close($ch);
+                
+                if ($http_code > 0) {
+                    log_message("Flask application started successfully with PID: $pid");
+                    return true;
+                }
             }
         }
         sleep(1);
