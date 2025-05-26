@@ -1,37 +1,23 @@
 Options +FollowSymLinks +ExecCGI
-AddHandler wsgi-script .py
 RewriteEngine On
 
 # Force HTTPS
 RewriteCond %{HTTPS} off
 RewriteRule ^(.*)$ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
 
-# Set Python path and environment variables
-SetEnv PYTHONPATH /home/ddiemeo9zafc/mapcontacts
-SetEnv FLASK_APP app.py
-SetEnv FLASK_ENV production
-
 # Handle static files
 RewriteCond %{REQUEST_FILENAME} -f
 RewriteRule ^ - [L]
 
-# Test WSGI handler
-RewriteRule ^wsgi-test$ test_wsgi.py [QSA,L]
-
-# Handle all other requests through WSGI
+# Route all other requests through PHP proxy
 RewriteCond %{REQUEST_FILENAME} !-f
 RewriteCond %{REQUEST_FILENAME} !-d
-RewriteRule ^(.*)$ /home/ddiemeo9zafc/mapcontacts/app_wsgi.py [QSA,L]
+RewriteRule ^(.*)$ index.php [QSA,L]
 
 # Allow access to all files
 <Files *>
     Require all granted
 </Files>
-
-# Allow access to Python files
-<FilesMatch "\.py$">
-    Require all granted
-</FilesMatch>
 
 # Allow access to static files
 <FilesMatch "\.(css|js|jpg|jpeg|png|gif|ico|svg|woff|woff2|ttf|eot|html)$">
