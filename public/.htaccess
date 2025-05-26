@@ -5,23 +5,25 @@ RewriteEngine On
 RewriteCond %{HTTPS} off
 RewriteRule ^(.*)$ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
 
+# Set environment variables
+SetEnv PYTHONPATH /home/ddiemeo9zafc/mapcontacts
+SetEnv FLASK_APP app.py
+SetEnv FLASK_ENV production
+
 # Handle static files
-RewriteCond %{REQUEST_FILENAME} -f
-RewriteRule ^ - [L]
+RewriteCond %{REQUEST_URI} !^/static/
+RewriteCond %{REQUEST_URI} !^/favicon.ico$
+RewriteCond %{REQUEST_URI} !^/robots.txt$
+RewriteCond %{REQUEST_URI} !^/php_error.log$
+RewriteCond %{REQUEST_URI} !^/app.log$
 
 # Route all other requests through PHP proxy
-RewriteCond %{REQUEST_FILENAME} !-f
-RewriteCond %{REQUEST_FILENAME} !-d
 RewriteRule ^(.*)$ index.php [QSA,L]
 
-# Allow access to all files
-<Files *>
-    Require all granted
-</Files>
-
-# Allow access to static files
-<FilesMatch "\.(css|js|jpg|jpeg|png|gif|ico|svg|woff|woff2|ttf|eot|html)$">
-    Require all granted
+# Allow access to specific file types
+<FilesMatch "\.(css|js|jpg|jpeg|png|gif|ico|html|txt|log)$">
+    Order Allow,Deny
+    Allow from all
 </FilesMatch>
 
 # Security headers
