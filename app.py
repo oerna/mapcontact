@@ -10,17 +10,51 @@ import os
 import csv
 import io
 import logging
+from logging.handlers import RotatingFileHandler
 from werkzeug.utils import secure_filename
 import traceback
+import sys
 
 # Configure logging
+log_dir = os.path.join(os.path.dirname(__file__), 'logs')
+if not os.path.exists(log_dir):
+    os.makedirs(log_dir, mode=0o755)
+
+# Configure logging to both file and console
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
+
+# Add file handler
+file_handler = RotatingFileHandler(
+    os.path.join(log_dir, 'app.log'),
+    maxBytes=10485760,  # 10MB
+    backupCount=5
+)
+file_handler.setFormatter(logging.Formatter(
+    '%(asctime)s %(levelname)s: %(message)s [in %(pathname)s:%(lineno)d]'
+))
+file_handler.setLevel(logging.INFO)
+logger.addHandler(file_handler)
+
+# Also log to a file in the public directory for easier access
+public_log = os.path.join(os.path.dirname(__file__), 'public', 'error.log')
+with open(public_log, 'w') as f:
+    f.write("Starting application...\n")
+
+def log_error(message):
+    with open(public_log, 'a') as f:
+        f.write(f"{datetime.now()}: {message}\n")
+    logger.error(message)
 
 # Ensure instance directory exists with proper permissions
 instance_path = os.path.abspath(os.path.join(os.path.dirname(__file__), 'instance'))
 if not os.path.exists(instance_path):
     os.makedirs(instance_path, mode=0o755)
+
+# Log application startup information
+log_error(f"Python version: {sys.version}")
+log_error(f"Working directory: {os.getcwd()}")
+log_error(f"Files in current directory: {os.listdir('.')}")
 
 # Updated deployment configuration
 app = Flask(__name__, 
@@ -60,18 +94,19 @@ try:
         # Production database (MySQL)
         database_url = os.environ.get('DATABASE_URL')
         app.config['SQLALCHEMY_DATABASE_URI'] = database_url
-        logger.info(f"Using production database: {database_url}")
+        log_error(f"Using production database: {database_url}")
     else:
         # Development database (SQLite)
         db_path = os.path.join(instance_path, 'contacts.db')
         app.config['SQLALCHEMY_DATABASE_URI'] = f'sqlite:///{db_path}'
-        logger.info(f"Using development database: {db_path}")
+        log_error(f"Using development database: {db_path}")
 
     app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
     db = SQLAlchemy(app)
-    logger.info("Database connection configured successfully")
+    log_error("Database connection configured successfully")
 except Exception as e:
-    logger.error(f"Database configuration error: {str(e)}")
+    error_msg = f"Database configuration error: {str(e)}\n{traceback.format_exc()}"
+    log_error(error_msg)
     raise
 
 # Initialize geocoder
@@ -132,43 +167,44 @@ with app.app_context():
             admin.set_password('admin123')
             db.session.add(admin)
             db.session.commit()
-            logger.info("Created admin user")
+            log_error("Created admin user")
         else:
-            logger.info("Admin user already exists")
+            log_error("Admin user already exists")
     except Exception as e:
-        logger.error(f"Database initialization error: {str(e)}")
+        error_msg = f"Database initialization error: {str(e)}\n{traceback.format_exc()}"
+        log_error(error_msg)
         raise
 
 @app.route('/login', methods=['POST'])
 def login():
     try:
-        logger.info("Login attempt received")
+        log_error("Login attempt received")
         if not request.is_json:
-            logger.warning("Login attempt with non-JSON data")
+            log_error("Login attempt with non-JSON data")
             return jsonify({'error': 'Request must be JSON'}), 400
             
         data = request.get_json()
-        logger.info(f"Login attempt for username: {data.get('username', 'not provided')}")
+        log_error(f"Login attempt for username: {data.get('username', 'not provided')}")
         
         if not data or 'username' not in data or 'password' not in data:
-            logger.warning("Login attempt with missing credentials")
+            log_error("Login attempt with missing credentials")
             return jsonify({'error': 'Missing username or password'}), 400
             
         user = User.query.filter_by(username=data['username']).first()
         if not user:
-            logger.warning(f"Login attempt with non-existent username: {data['username']}")
+            log_error(f"Login attempt with non-existent username: {data['username']}")
             return jsonify({'error': 'Invalid username or password'}), 401
             
         if not user.check_password(data['password']):
-            logger.warning(f"Login attempt with incorrect password for user: {data['username']}")
+            log_error(f"Login attempt with incorrect password for user: {data['username']}")
             return jsonify({'error': 'Invalid username or password'}), 401
             
         login_user(user, remember=True)
         session.permanent = True
         
         # Log session details
-        logger.info(f"Session created - ID: {session.sid}, User: {data['username']}")
-        logger.info(f"Session cookie settings: secure={app.config['SESSION_COOKIE_SECURE']}, "
+        log_error(f"Session created - ID: {session.sid}, User: {data['username']}")
+        log_error(f"Session cookie settings: secure={app.config['SESSION_COOKIE_SECURE']}, "
                    f"httponly={app.config['SESSION_COOKIE_HTTPONLY']}, "
                    f"samesite={app.config['SESSION_COOKIE_SAMESITE']}, "
                    f"domain={app.config['SESSION_COOKIE_DOMAIN']}")
@@ -176,8 +212,8 @@ def login():
         response = jsonify({'message': 'Logged in successfully'})
         return response
     except Exception as e:
-        logger.error(f"Login error: {str(e)}")
-        logger.error(f"Error details: {traceback.format_exc()}")
+        error_msg = f"Login error: {str(e)}\n{traceback.format_exc()}"
+        log_error(error_msg)
         return jsonify({'error': 'An error occurred during login. Please try again later.'}), 500
 
 @app.route('/logout')
@@ -188,7 +224,8 @@ def logout():
         session.clear()
         return redirect('/login.html')
     except Exception as e:
-        logger.error(f"Logout error: {str(e)}")
+        error_msg = f"Logout error: {str(e)}"
+        log_error(error_msg)
         return redirect('/login.html')
 
 @app.route('/')
@@ -242,7 +279,8 @@ def check_auth():
             return jsonify({'authenticated': True, 'user': current_user.username})
         return jsonify({'authenticated': False}), 401
     except Exception as e:
-        logger.error(f"Auth check error: {str(e)}")
+        error_msg = f"Auth check error: {str(e)}"
+        log_error(error_msg)
         return jsonify({'authenticated': False, 'error': str(e)}), 401
 
 @app.route('/api/change-password', methods=['POST'])
@@ -270,12 +308,12 @@ def update_contact(contact_id):
         return jsonify({'error': 'Contact not found'}), 404
         
     data = request.json
-    print("=== DEBUG: Contact Update ===")
-    print("Contact ID:", contact_id)
-    print("Raw request data:", request.get_data())
-    print("Parsed request data:", data)
-    print("Current contact type:", contact.contact_type)
-    print("Requested contact type:", data.get('contact_type'))
+    log_error("=== DEBUG: Contact Update ===")
+    log_error("Contact ID:", contact_id)
+    log_error("Raw request data:", request.get_data())
+    log_error("Parsed request data:", data)
+    log_error("Current contact type:", contact.contact_type)
+    log_error("Requested contact type:", data.get('contact_type'))
     
     # Update the contact fields
     contact.name = data.get('name', contact.name)
@@ -289,21 +327,21 @@ def update_contact(contact_id):
     
     # Directly set contact_type from request data
     if 'contact_type' in data:
-        print("Setting contact type to:", data['contact_type'])
+        log_error("Setting contact type to:", data['contact_type'])
         contact.contact_type = data['contact_type']
         db.session.flush()  # Flush changes to see if they're applied
-        print("Contact type after flush:", contact.contact_type)
+        log_error("Contact type after flush:", contact.contact_type)
     
-    print("Final contact type:", contact.contact_type)
+    log_error("Final contact type:", contact.contact_type)
     
     try:
         db.session.commit()
-        print("Contact updated successfully")
-        print("Returning contact data:", contact.to_dict())
-        print("=== END DEBUG ===")
+        log_error("Contact updated successfully")
+        log_error("Returning contact data:", contact.to_dict())
+        log_error("=== END DEBUG ===")
         return jsonify(contact.to_dict())
     except Exception as e:
-        print("Error updating contact:", str(e))
+        log_error("Error updating contact:", str(e))
         db.session.rollback()
         return jsonify({'error': str(e)}), 500
 
@@ -446,6 +484,25 @@ def delete_contact(contact_id):
         db.session.rollback()
         return jsonify({'error': str(e)}), 500
 
+# Error handlers
+@app.errorhandler(500)
+def internal_error(error):
+    error_msg = f"500 error occurred: {str(error)}\n{traceback.format_exc()}"
+    log_error(error_msg)
+    return "We're sorry, but something went wrong. The issue has been logged for investigation.", 500
+
+@app.errorhandler(404)
+def not_found_error(error):
+    error_msg = f"404 error occurred: {str(error)}"
+    log_error(error_msg)
+    return "The requested resource was not found.", 404
+
 if __name__ == '__main__':
-    port = int(os.environ.get('PORT', 8000))
-    app.run(host='127.0.0.1', port=port, debug=False)  # Only listen on localhost 
+    try:
+        port = int(os.environ.get('PORT', 8000))
+        log_error(f"Starting Flask application on port {port}")
+        app.run(host='127.0.0.1', port=port, debug=False)  # Only listen on localhost
+    except Exception as e:
+        error_msg = f"Failed to start Flask application: {str(e)}\n{traceback.format_exc()}"
+        log_error(error_msg)
+        raise 
