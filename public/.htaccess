@@ -15,8 +15,8 @@ SetEnv FLASK_ENV production
 RewriteCond %{REQUEST_FILENAME} -f
 RewriteRule ^ - [L]
 
-# Handle API requests
-RewriteRule ^api/ - [L]
+# Test WSGI handler
+RewriteRule ^wsgi-test$ test_wsgi.py [QSA,L]
 
 # Handle all other requests through WSGI
 RewriteCond %{REQUEST_FILENAME} !-f
