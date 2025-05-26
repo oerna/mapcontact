@@ -22,17 +22,17 @@ instance_path = os.path.abspath(os.path.join(os.path.dirname(__file__), 'instanc
 if not os.path.exists(instance_path):
     os.makedirs(instance_path, mode=0o755)
 
-# Updated deployment configuration with system Python 3.6
+# Updated deployment configuration
 app = Flask(__name__, 
            static_folder='static',
            static_url_path='',
            template_folder='static')
 app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'mapcontacts-secure-key-2024')
-app.config['SESSION_COOKIE_SECURE'] = os.environ.get('FLASK_ENV') == 'production'  # Only use secure cookies in production
+app.config['SESSION_COOKIE_SECURE'] = True  # Always use secure cookies
 app.config['SESSION_COOKIE_HTTPONLY'] = True
 app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
 app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(seconds=int(os.environ.get('PERMANENT_SESSION_LIFETIME', '86400')))
-app.config['SESSION_COOKIE_DOMAIN'] = None  # Don't set domain in development
+app.config['SESSION_COOKIE_DOMAIN'] = None  # Don't set domain to allow proxy
 
 # Configure CORS
 CORS(app, 
@@ -448,4 +448,4 @@ def delete_contact(contact_id):
 
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 8000))
-    app.run(host='0.0.0.0', port=port, debug=True) 
+    app.run(host='127.0.0.1', port=port, debug=False)  # Only listen on localhost 
