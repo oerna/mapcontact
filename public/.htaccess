@@ -9,6 +9,9 @@ RewriteRule ^(.*)$ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
 # Set Python path
 SetEnv PYTHONPATH /home/ddiemeo9zafc/mapcontacts
 
+# Test WSGI handler
+RewriteRule ^wsgi-test$ test_wsgi.py [L]
+
 # Handle static files
 RewriteCond %{REQUEST_FILENAME} -f
 RewriteRule ^ - [L]
