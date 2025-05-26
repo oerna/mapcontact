@@ -97,16 +97,10 @@ login_manager.session_protection = 'strong'
 
 # Database configuration
 try:
-    if os.environ.get('FLASK_ENV') == 'production' and os.environ.get('DATABASE_URL'):
-        # Production database (MySQL)
-        database_url = os.environ.get('DATABASE_URL')
-        app.config['SQLALCHEMY_DATABASE_URI'] = database_url
-        log_info(f"Using production database: {database_url}")
-    else:
-        # Development database (SQLite)
-        db_path = os.path.join(instance_path, 'contacts.db')
-        app.config['SQLALCHEMY_DATABASE_URI'] = f'sqlite:///{db_path}'
-        log_info(f"Using development database: {db_path}")
+    # Production database (MySQL)
+    database_url = 'mysql://oernamann:gM0%k-4Ezxzr@localhost/contactmap_mysql'
+    app.config['SQLALCHEMY_DATABASE_URI'] = database_url
+    log_info(f"Using production database: {database_url}")
 
     app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
     db = SQLAlchemy(app)

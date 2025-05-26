@@ -11,6 +11,7 @@ SetEnv PYTHONPATH /home/ddiemeo9zafc/mapcontacts
 SetEnv FLASK_APP app.py
 SetEnv FLASK_ENV production
 SetEnv PYTHON_VERSION 3.6
+SetEnv DATABASE_URL mysql://oernamann:gM0%k-4Ezxzr@localhost/contactmap_mysql
 
 # Handle static files first
 RewriteCond %{REQUEST_URI} ^/static/
