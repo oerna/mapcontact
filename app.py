@@ -48,15 +48,20 @@ def log_error(message):
         f.write(f"{datetime.now()}: {message}\n")
     logger.error(message)
 
+def log_info(message):
+    with open(public_log, 'a') as f:
+        f.write(f"{datetime.now()}: {message}\n")
+    logger.info(message)
+
 # Ensure instance directory exists with proper permissions
 instance_path = os.path.abspath(os.path.join(os.path.dirname(__file__), 'instance'))
 if not os.path.exists(instance_path):
     os.makedirs(instance_path, mode=0o755)
 
 # Log application startup information
-log_error(f"Python version: {sys.version}")
-log_error(f"Working directory: {os.getcwd()}")
-log_error(f"Files in current directory: {os.listdir('.')}")
+log_info(f"Python version: {sys.version}")
+log_info(f"Working directory: {os.getcwd()}")
+log_info(f"Files in current directory: {os.listdir('.')}")
 
 # Updated deployment configuration
 app = Flask(__name__, 
@@ -96,16 +101,16 @@ try:
         # Production database (MySQL)
         database_url = os.environ.get('DATABASE_URL')
         app.config['SQLALCHEMY_DATABASE_URI'] = database_url
-        log_error(f"Using production database: {database_url}")
+        log_info(f"Using production database: {database_url}")
     else:
         # Development database (SQLite)
         db_path = os.path.join(instance_path, 'contacts.db')
         app.config['SQLALCHEMY_DATABASE_URI'] = f'sqlite:///{db_path}'
-        log_error(f"Using development database: {db_path}")
+        log_info(f"Using development database: {db_path}")
 
     app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
     db = SQLAlchemy(app)
-    log_error("Database connection configured successfully")
+    log_info("Database connection configured successfully")
 except Exception as e:
     error_msg = f"Database configuration error: {str(e)}\n{traceback.format_exc()}"
     log_error(error_msg)
@@ -169,9 +174,9 @@ with app.app_context():
             admin.set_password('admin123')
             db.session.add(admin)
             db.session.commit()
-            log_error("Created admin user")
+            log_info("Created admin user")
         else:
-            log_error("Admin user already exists")
+            log_info("Admin user already exists")
     except Exception as e:
         error_msg = f"Database initialization error: {str(e)}\n{traceback.format_exc()}"
         log_error(error_msg)
