@@ -17,6 +17,7 @@ $app_dir = '/home/ddiemeo9zafc/mapcontacts';
 $port = 8000;
 $pid_file = $app_dir . '/app.pid';
 $app_log = __DIR__ . '/app.log';
+$gunicorn_path = '/home/ddiemeo9zafc/.local/bin/gunicorn';
 
 // Function to check if a process is running
 function is_process_running($pid) {
@@ -26,13 +27,13 @@ function is_process_running($pid) {
 
 // Function to check if Gunicorn is available
 function check_gunicorn() {
-    exec('which gunicorn', $output, $return_var);
-    if ($return_var === 0) {
-        exec('gunicorn --version', $version);
+    global $gunicorn_path;
+    if (file_exists($gunicorn_path)) {
+        exec("$gunicorn_path --version", $version);
         log_message("Gunicorn found: " . implode("\n", $version));
         return true;
     }
-    log_message("Gunicorn not found in PATH");
+    log_message("Gunicorn not found at $gunicorn_path");
     return false;
 }
 
@@ -73,11 +74,21 @@ function start_flask_app() {
         log_message("Checking process with PID: $pid");
         
         if ($pid && is_process_running($pid)) {
-            $started = true;
-            break;
+            // Check if the application is responding
+            $ch = curl_init("http://127.0.0.1:$port/");
+            curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+            curl_setopt($ch, CURLOPT_TIMEOUT, 2);
+            $response = curl_exec($ch);
+            $http_code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+            curl_close($ch);
+            
+            if ($http_code > 0) {
+                $started = true;
+                break;
+            }
         }
         
-        log_message("Process $pid is not running");
+        log_message("Process $pid is not running or not responding");
         if (file_exists($app_log)) {
             log_message("Application log contents after crash:");
             log_message(file_get_contents($app_log));

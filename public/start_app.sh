@@ -20,10 +20,10 @@ export PYTHONPATH="/home/ddiemeo9zafc/mapcontacts"
 export FLASK_APP="/home/ddiemeo9zafc/mapcontacts/app.py"
 export FLASK_ENV="production"
 export PATH="/home/ddiemeo9zafc/.local/bin:$PATH"
+export PYTHONUNBUFFERED=1
 
 # Verify Python environment
 echo "Python executable: $(which python3)"
-echo "Gunicorn executable: $(which gunicorn)"
 echo "PYTHONPATH: $PYTHONPATH"
 echo "FLASK_APP: $FLASK_APP"
 
@@ -36,7 +36,7 @@ ls -la
 
 # Start Gunicorn with detailed error logging
 echo "Starting Gunicorn..."
-exec gunicorn \
+exec /home/ddiemeo9zafc/.local/bin/gunicorn \
     --bind 127.0.0.1:8000 \
     --workers 2 \
     --timeout 120 \
@@ -45,4 +45,5 @@ exec gunicorn \
     --log-level debug \
     --capture-output \
     --enable-stdio-inheritance \
+    --preload \
     app:app 
