@@ -52,7 +52,7 @@ function start_flask_app() {
     chmod($start_script, 0755);
     
     // Start the application
-    $command = "nohup $start_script > $app_log 2>&1 & echo $! > $pid_file";
+    $command = "cd $app_dir && nohup $start_script > $app_log 2>&1 & echo $! > $pid_file";
     log_message("Started Flask application with command: $command");
     
     exec($command, $output, $return_var);

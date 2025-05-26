@@ -5,15 +5,19 @@ set -e
 set -o pipefail
 
 # Set up logging
-exec 1> >(tee -a "/home/ddiemeo9zafc/mapcontacts/public/app.log")
-exec 2> >(tee -a "/home/ddiemeo9zafc/mapcontacts/public/app.log" >&2)
+LOG_FILE="/home/ddiemeo9zafc/mapcontacts/public/app.log"
 
-echo "=== Starting Flask application ==="
-echo "Current time: $(date)"
-echo "Current user: $(whoami)"
-echo "Current directory: $(pwd)"
-echo "Python version: $(python3 --version)"
-echo "PATH: $PATH"
+# Function to log messages
+log() {
+    echo "$(date '+%Y-%m-%d %H:%M:%S') $1" >> "$LOG_FILE"
+}
+
+log "=== Starting Flask application ==="
+log "Current time: $(date)"
+log "Current user: $(whoami)"
+log "Current directory: $(pwd)"
+log "Python version: $(python3 --version)"
+log "PATH: $PATH"
 
 # Set up environment
 export PYTHONPATH="/home/ddiemeo9zafc/mapcontacts"
@@ -23,25 +27,25 @@ export PATH="/home/ddiemeo9zafc/.local/bin:$PATH"
 export PYTHONUNBUFFERED=1
 
 # Verify Python environment
-echo "Python executable: $(which python3)"
-echo "PYTHONPATH: $PYTHONPATH"
-echo "FLASK_APP: $FLASK_APP"
+log "Python executable: $(which python3)"
+log "PYTHONPATH: $PYTHONPATH"
+log "FLASK_APP: $FLASK_APP"
 
 # Change to application directory
 cd /home/ddiemeo9zafc/mapcontacts
 
 # List directory contents for debugging
-echo "Directory contents:"
-ls -la
+log "Directory contents:"
+ls -la >> "$LOG_FILE" 2>&1
 
 # Start Gunicorn with detailed error logging
-echo "Starting Gunicorn..."
+log "Starting Gunicorn..."
 exec /home/ddiemeo9zafc/.local/bin/gunicorn \
     --bind 127.0.0.1:8000 \
     --workers 2 \
     --timeout 120 \
-    --access-logfile /home/ddiemeo9zafc/mapcontacts/public/app.log \
-    --error-logfile /home/ddiemeo9zafc/mapcontacts/public/app.log \
+    --access-logfile "$LOG_FILE" \
+    --error-logfile "$LOG_FILE" \
     --log-level debug \
     --capture-output \
     --enable-stdio-inheritance \
