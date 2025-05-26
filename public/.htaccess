@@ -8,9 +8,8 @@ RewriteRule ^(.*)$ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
 
 # Set Python path
 SetEnv PYTHONPATH /home/ddiemeo9zafc/mapcontacts
-
-# Test WSGI handler
-RewriteRule ^wsgi-test$ test_wsgi.py [L]
+SetEnv FLASK_APP app.py
+SetEnv FLASK_ENV production
 
 # Handle static files
 RewriteCond %{REQUEST_FILENAME} -f
@@ -19,7 +18,7 @@ RewriteRule ^ - [L]
 # Handle all other requests through WSGI
 RewriteCond %{REQUEST_FILENAME} !-f
 RewriteCond %{REQUEST_FILENAME} !-d
-RewriteRule ^(.*)$ /home/ddiemeo9zafc/mapcontacts/app_wsgi.py/$1 [QSA,L]
+RewriteRule ^(.*)$ app_wsgi.py [QSA,L]
 
 # Allow access to all files
 <Files *>

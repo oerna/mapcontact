@@ -29,14 +29,18 @@ if app_dir not in sys.path:
 
 # Set environment variables
 os.environ['FLASK_ENV'] = 'production'
-os.environ['FLASK_APP'] = 'app.py'
+os.environ['FLASK_APP'] = os.path.join(app_dir, 'app.py')
 
 try:
     # Import the Flask application
     from app import app as application
     logger.info("Flask application imported successfully")
+    logger.info(f"Application path: {app_dir}")
+    logger.info(f"Python path: {sys.path}")
 except Exception as e:
     logger.error(f"Error importing Flask application: {str(e)}")
+    logger.error(f"Current directory: {os.getcwd()}")
+    logger.error(f"Files in current directory: {os.listdir('.')}")
     raise
 
 # Error handlers
