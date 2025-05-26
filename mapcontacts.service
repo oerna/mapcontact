@@ -1,0 +1,14 @@
+[Unit]
+Description=MapContacts Flask Application
+After=network.target
+
+[Service]
+User=www-data
+Group=www-data
+WorkingDirectory=/var/www/mapcontacts
+Environment="PATH=/var/www/mapcontacts/venv/bin"
+EnvironmentFile=/var/www/mapcontacts/.env
+ExecStart=/var/www/mapcontacts/venv/bin/gunicorn --workers 3 --bind unix:mapcontacts.sock -m 007 app:app
+
+[Install]
+WantedBy=multi-user.target 

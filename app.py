@@ -22,13 +22,8 @@ CORS(app)
 
 # Database configuration
 if os.environ.get('DATABASE_URL'):
-    # Production database (PostgreSQL on Heroku)
-    # Heroku provides DATABASE_URL in the format: postgres://user:password@host:port/dbname
-    # SQLAlchemy requires it in the format: postgresql://user:password@host:port/dbname
-    database_url = os.environ.get('DATABASE_URL')
-    if database_url.startswith('postgres://'):
-        database_url = database_url.replace('postgres://', 'postgresql://', 1)
-    app.config['SQLALCHEMY_DATABASE_URI'] = database_url
+    # Production database (MySQL)
+    app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('DATABASE_URL')
 else:
     # Development database (SQLite)
     db_path = os.path.join(instance_path, 'contacts.db')

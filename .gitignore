@@ -1,13 +1,26 @@
-# System Files
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+venv/
+ENV/
+
+# Environment variables
+.env
+
+# Database
+*.db
+*.sqlite3
+
+# IDE
+.vscode/
+.idea/
+
+# OS
 .DS_Store
 Thumbs.db
-
-# IDE - VSCode
-.vscode/*
-!.vscode/settings.json
-!.vscode/tasks.json
-!.vscode/launch.json
-!.vscode/extensions.json
 
 # Dependencies
 node_modules/
@@ -16,16 +29,12 @@ yarn-debug.log
 yarn-error.log
 
 # Environment variables
-.env
 .env.local
 .env.*.local
 
 # Build output
 dist/
 build/
-
-# Database files
-instance/*.db
 
 # Keep exports directory but ignore temporary files
 !exports/
