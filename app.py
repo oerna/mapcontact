@@ -22,6 +22,7 @@ instance_path = os.path.abspath(os.path.join(os.path.dirname(__file__), 'instanc
 if not os.path.exists(instance_path):
     os.makedirs(instance_path, mode=0o755)
 
+# Updated deployment configuration
 app = Flask(__name__, static_folder='static', static_url_path='')
 app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'mapcontacts-secure-key-2024')
 app.config['SESSION_COOKIE_SECURE'] = os.environ.get('FLASK_ENV') == 'production'  # Only use secure cookies in production
