@@ -26,9 +26,26 @@ function is_process_running($pid) {
     return file_exists("/proc/$pid");
 }
 
+// Function to check if Gunicorn is available
+function check_gunicorn() {
+    exec('which gunicorn', $output, $return_var);
+    if ($return_var !== 0) {
+        log_message("Gunicorn not found in PATH");
+        return false;
+    }
+    log_message("Gunicorn found at: " . $output[0]);
+    return true;
+}
+
 // Function to start the Flask application
 function start_flask_app() {
     global $python_app, $pid_file, $log_file;
+    
+    // Check if Gunicorn is available
+    if (!check_gunicorn()) {
+        log_message("Gunicorn is not available. Please install it using: pip install gunicorn");
+        return false;
+    }
     
     // Kill any existing process
     if (file_exists($pid_file)) {
@@ -40,12 +57,38 @@ function start_flask_app() {
         unlink($pid_file);
     }
     
+    // Check Python version and environment
+    exec('python3 --version', $python_version);
+    log_message("Python version: " . implode("\n", $python_version));
+    
+    // Check if the application directory exists and is accessible
+    if (!is_dir('/home/ddiemeo9zafc/mapcontacts')) {
+        log_message("Application directory does not exist or is not accessible");
+        return false;
+    }
+    
+    // Check if app.py exists and is readable
+    if (!is_readable('/home/ddiemeo9zafc/mapcontacts/app.py')) {
+        log_message("app.py does not exist or is not readable");
+        return false;
+    }
+    
     // Start the application with Gunicorn
     $command = "cd /home/ddiemeo9zafc/mapcontacts && nohup gunicorn --bind 127.0.0.1:8000 --workers 1 --timeout 120 --access-logfile $log_file --error-logfile $log_file --capture-output --log-level debug app:app > $log_file 2>&1 & echo $! > $pid_file";
     exec($command, $output, $return_var);
     log_message("Started Flask application with command: $command");
     log_message("Command output: " . implode("\n", $output));
     log_message("Return value: $return_var");
+    
+    // Check if the PID file was created
+    if (!file_exists($pid_file)) {
+        log_message("PID file was not created");
+        if (file_exists($log_file)) {
+            log_message("Application log contents:");
+            log_message(file_get_contents($log_file));
+        }
+        return false;
+    }
     
     // Wait for the application to start
     $max_attempts = 10;
@@ -76,6 +119,11 @@ function start_flask_app() {
                 }
             } else {
                 log_message("Process $pid is not running");
+                // Check if the process crashed
+                if (file_exists($log_file)) {
+                    log_message("Application log contents after crash:");
+                    log_message(file_get_contents($log_file));
+                }
             }
         } else {
             log_message("PID file does not exist");
