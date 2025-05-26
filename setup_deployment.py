@@ -42,8 +42,8 @@ do
         pip install --upgrade pip
         pip install -r requirements.txt
         
-        # Initialize database if needed
-        python init_db.py
+        # Initialize database
+        python3.6 init_db.py
         
         # Restart the application
         touch $TARGET/tmp/restart.txt
