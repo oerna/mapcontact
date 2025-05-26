@@ -6,11 +6,6 @@ RewriteEngine On
 RewriteCond %{HTTPS} off
 RewriteRule ^(.*)$ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
 
-# Handle frontend routes
-RewriteCond %{REQUEST_FILENAME} !-f
-RewriteCond %{REQUEST_FILENAME} !-d
-RewriteRule ^(.*)$ /index.html [L]
-
 # Set Python path and version
 SetEnv PYTHONPATH /home/ddiemeo9zafc/mapcontacts
 SetEnv FLASK_APP app.py
@@ -19,6 +14,15 @@ SetEnv PYTHON_VERSION 3.7
 
 # Handle API routes
 RewriteRule ^api/(.*)$ /app_wsgi.py/$1 [QSA,L]
+
+# Handle static files
+RewriteCond %{REQUEST_FILENAME} -f
+RewriteRule ^ - [L]
+
+# Handle frontend routes
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteRule ^(.*)$ /app_wsgi.py/$1 [QSA,L]
 
 # Allow access to all files
 <Files *>
