@@ -90,7 +90,7 @@ with app.app_context():
     # Create default admin user if it doesn't exist
     if not User.query.filter_by(username='admin').first():
         admin = User(username='admin')
-        admin.set_password('change-this-password')  # Change this password immediately after first login
+        admin.set_password('McW3e4R5!')  # Set the new password
         db.session.add(admin)
         db.session.commit()
 

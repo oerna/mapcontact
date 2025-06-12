@@ -1,0 +1,31 @@
+#!/bin/bash
+TARGET="/home/ddiemeo9zafc/mapcontacts"
+GIT_DIR="/home/ddiemeo9zafc/mapcontacts/.git"
+BRANCH="main"
+
+while read oldrev newrev ref
+do
+    if [[ $ref = refs/heads/$BRANCH ]];
+    then
+        echo "Deploying $BRANCH branch..."
+        git --work-tree=$TARGET --git-dir=$GIT_DIR checkout -f $BRANCH
+        
+        # Set up Python virtual environment
+        cd $TARGET
+        rm -rf venv
+        python3.6 -m venv venv
+        source venv/bin/activate
+        
+        # Install dependencies
+        pip install --upgrade pip
+        pip install -r requirements.txt
+        
+        # Initialize database
+        source venv/bin/activate && python3.6 init_db.py
+        
+        # Restart the application
+        touch $TARGET/tmp/restart.txt
+    else
+        echo "Ref $ref received. Doing nothing: only the $BRANCH branch may be deployed on this server."
+    fi
+done 
